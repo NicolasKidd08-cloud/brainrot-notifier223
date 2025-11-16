@@ -1,108 +1,89 @@
--- Main UI Container
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BrainrotUI"
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+--// Developer Debug Menu for Brainrot Spawns (SAFE VERSION)
+--// This does NOT connect to exploits or Discord scraping.
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 720, 0, 500) -- bigger UI
-MainFrame.Position = UDim2.new(0.5, -360, 0.5, -250)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 20, 45) -- dark navy background
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Top Bar
-local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(1, 0, 0, 38)
-TopBar.BackgroundColor3 = Color3.fromRGB(10, 15, 35) -- navy blue
-TopBar.BorderSizePixel = 0
-TopBar.Parent = MainFrame
+local BrainrotEvent = ReplicatedStorage:WaitForChild("BrainrotLog") -- RemoteEvent
+local Allowed = { ["Nicolas Kidd"] = true } -- dev-only access
 
-local Title = Instance.new("TextLabel")
-Title.Text = "Brainrot Notifier"
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 22
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundTransparency = 1
-Title.Size = UDim2.new(1, -50, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = TopBar
+--// DEV-ONLY CHECK
+if not Allowed[Players.LocalPlayer.Name] then
+    return
+end
 
--- CLOSE BUTTON (NOW WORKS)
-local Close = Instance.new("TextButton")
-Close.Size = UDim2.new(0, 40, 1, 0)
-Close.Position = UDim2.new(1, -40, 0, 0)
-Close.Text = "X"
-Close.Font = Enum.Font.GothamBold
-Close.TextSize = 22
-Close.TextColor3 = Color3.fromRGB(255, 100, 100)
-Close.BackgroundTransparency = 1
-Close.Parent = TopBar
+--// UI CREATION
+local ScreenGui = Instance.new("ScreenGui", Players.LocalPlayer.PlayerGui)
+ScreenGui.Name = "BrainrotDevMenu"
 
-Close.MouseButton1Click:Connect(function()
-	ScreenGui:Destroy()
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 260, 0, 330)
+Frame.Position = UDim2.new(0, 30, 0.4, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+
+local UIList = Instance.new("UIListLayout", Frame)
+UIList.Padding = UDim.new(0, 6)
+
+-- Toggle
+local Toggle = Instance.new("TextButton", Frame)
+Toggle.Text = "Auto-Join: OFF"
+Toggle.Size = UDim2.new(1, -10, 0, 40)
+Toggle.Position = UDim2.new(0, 5, 0, 5)
+Toggle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+
+local AutoJoinEnabled = false
+
+Toggle.MouseButton1Click:Connect(function()
+    AutoJoinEnabled = not AutoJoinEnabled
+    Toggle.Text = AutoJoinEnabled and "Auto-Join: ON" or "Auto-Join: OFF"
 end)
 
--- LEFT SIDE FEATURE LIST (SMALLER)
-local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0, 160, 1, -38)
-Sidebar.Position = UDim2.new(0, 0, 0, 38)
-Sidebar.BackgroundColor3 = Color3.fromRGB(22, 24, 55)
-Sidebar.BorderSizePixel = 0
-Sidebar.Parent = MainFrame
+-- Min rarity box
+local MinBox = Instance.new("TextBox", Frame)
+MinBox.PlaceholderText = "Minimum rarity (number)"
+MinBox.Size = UDim2.new(1, -10, 0, 40)
+MinBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 
-local FeaturesTitle = Instance.new("TextLabel")
-FeaturesTitle.Text = "Features"
-FeaturesTitle.Font = Enum.Font.GothamBold
-FeaturesTitle.TextSize = 20
-FeaturesTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-FeaturesTitle.BackgroundTransparency = 1
-FeaturesTitle.Position = UDim2.new(0, 10, 0, 10)
-FeaturesTitle.Size = UDim2.new(1, -20, 0, 20)
-FeaturesTitle.Parent = Sidebar
+-- Ignore list
+local IgnoreBox = Instance.new("TextBox", Frame)
+IgnoreBox.PlaceholderText = "Ignore list (comma-separated)"
+IgnoreBox.Size = UDim2.new(1, -10, 0, 40)
+IgnoreBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 
--- BRAINROT LIST PANEL (BIGGER)
-local BrainrotPanel = Instance.new("Frame")
-BrainrotPanel.Size = UDim2.new(1, -160, 1, -38)
-BrainrotPanel.Position = UDim2.new(0, 160, 0, 38)
-BrainrotPanel.BackgroundColor3 = Color3.fromRGB(30, 32, 70)
-BrainrotPanel.BorderSizePixel = 0
-BrainrotPanel.Parent = MainFrame
+-- Brainrot log
+local LogLabel = Instance.new("TextLabel", Frame)
+LogLabel.Size = UDim2.new(1, -10, 0, 180)
+LogLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+LogLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+LogLabel.TextWrapped = true
+LogLabel.Text = "Logged brainrots:\n"
 
-local BrainrotLabel = Instance.new("TextLabel")
-BrainrotLabel.Text = "Brainrots"
-BrainrotLabel.Font = Enum.Font.GothamBold
-BrainrotLabel.TextSize = 22
-BrainrotLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-BrainrotLabel.Position = UDim2.new(0, 10, 0, 10)
-BrainrotLabel.BackgroundTransparency = 1
-BrainrotLabel.Size = UDim2.new(1, -20, 0, 25)
-BrainrotLabel.Parent = BrainrotPanel
+--// Receive server logs
+BrainrotEvent.OnClientEvent:Connect(function(data)
+    local name = data.name
+    local rarity = data.rarity
 
--- SEARCH BAR
-local Search = Instance.new("TextBox")
-Search.PlaceholderText = "Search brainrot…"
-Search.Font = Enum.Font.Gotham
-Search.TextSize = 18
-Search.TextColor3 = Color3.fromRGB(255, 255, 255)
-Search.BackgroundColor3 = Color3.fromRGB(40, 42, 90)
-Search.BorderSizePixel = 0
-Search.Position = UDim2.new(0, 10, 0, 45)
-Search.Size = UDim2.new(1, -20, 0, 32)
-Search.Parent = BrainrotPanel
+    LogLabel.Text = LogLabel.Text .. ("\n• %s (rarity: %s)"):format(name, rarity)
 
--- SCROLLING LIST
-local List = Instance.new("ScrollingFrame")
-List.Size = UDim2.new(1, -20, 1, -90)
-List.Position = UDim2.new(0, 10, 0, 85)
-List.CanvasSize = UDim2.new(0, 0, 0, 0)
-List.ScrollBarThickness = 6
-List.BackgroundTransparency = 1
-List.Parent = BrainrotPanel
+    local minRare = tonumber(MinBox.Text)
+    local ignoreList = {}
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Parent = List
+    for item in string.gmatch(IgnoreBox.Text, "([^,]+)") do
+        ignoreList[item:lower()] = true
+    end
 
--- FUTURE: FILL LIST WITH YOUR SECRET + OG brainrots
--- (I can generate this automatically if you give me the list)
+    if AutoJoinEnabled and minRare and rarity >= minRare then
+        if not ignoreList[name:lower()] then
+            -- DEV-ONLY: Teleport
+            game:GetService("TeleportService"):TeleportToPlaceInstance(
+                game.PlaceId,
+                data.server,
+                Players.LocalPlayer
+            )
+        end
+    end
+end)
+
