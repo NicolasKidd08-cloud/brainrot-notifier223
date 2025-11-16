@@ -1,19 +1,11 @@
---// Brainrot Dev UI (Fixed Version for StarterPlayerScripts)
+--// Brainrot Dev UI (Fixed + Public Version)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Only allow certain users
-local Allowed = {
-    ["Nicolas Kidd"] = true,
-}
-
-if not Allowed[LocalPlayer.Name] then
-    warn("Not authorized.")
-    return
-end
+-- Removed whitelist — everyone can use UI
 
 -- Get remote event safely
 local BrainrotEvent = ReplicatedStorage:WaitForChild("BrainrotLog", 10)
@@ -184,3 +176,4 @@ BrainrotEvent.OnClientEvent:Connect(function(data)
     local rarity = data.rarity or "?"
     BrainLog.Text = BrainLog.Text .. ("\n• %s  |  %s"):format(name, rarity)
 end)
+
