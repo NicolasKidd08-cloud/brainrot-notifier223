@@ -1,5 +1,6 @@
 --[[
-    Nick and Scrap's Auto Jointer (Aesthetic UI) - Visibility Fix
+    Nick and Scrap's Auto Jointer (Aesthetic UI) - ZIndex Fix
+    Ensures all content is visible on top of the dark background.
     Safe Roblox UI - No exploits included. All 'features' are aesthetic placeholders.
     Made for GitHub usage
 ]]
@@ -24,7 +25,8 @@ MainFrame.Size = FRAME_SIZE
 MainFrame.Position = FRAME_POS
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 35)
 MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui -- Parented directly to ScreenGui
+MainFrame.Parent = ScreenGui 
+MainFrame.ZIndex = 1 -- Set Main Frame ZIndex
 
 -- Round corners
 local UICorner = Instance.new("UICorner", MainFrame)
@@ -40,7 +42,7 @@ RainbowBorder.Size = FRAME_SIZE + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_T
 RainbowBorder.Position = FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS)
 RainbowBorder.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Base color
 RainbowBorder.BorderSizePixel = 0
-RainbowBorder.ZIndex = 0 -- Should be behind all other UI elements
+RainbowBorder.ZIndex = 0 -- Behind MainFrame
 RainbowBorder.Parent = ScreenGui
 
 Instance.new("UICorner", RainbowBorder).CornerRadius = UDim.new(0, 14 + BORDER_THICKNESS)
@@ -59,7 +61,7 @@ Header.Size = UDim2.new(1, 0, 0, 45)
 Header.BackgroundColor3 = Color3.fromRGB(33, 35, 46)
 Header.BorderSizePixel = 0
 Header.Parent = MainFrame
-
+Header.ZIndex = 2 -- INCREASE ZINDEX
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
 -- Title
@@ -73,6 +75,7 @@ Title.TextSize = 20
 Title.TextColor3 = Color3.fromRGB(80, 255, 130)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
+Title.ZIndex = 3 -- Increase ZIndex for text
 
 -- Discord Label
 local DiscordLabel = Instance.new("TextLabel")
@@ -85,6 +88,7 @@ DiscordLabel.TextSize = 10
 DiscordLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 DiscordLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiscordLabel.Parent = Header
+DiscordLabel.ZIndex = 3 -- Increase ZIndex for text
 
 
 -- Collapse/Expand Button (Replaces traffic lights)
@@ -102,16 +106,20 @@ CollapseBtn.TextSize = 14
 CollapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CollapseBtn.BorderSizePixel = 0
 CollapseBtn.Parent = Header
+CollapseBtn.ZIndex = 3 -- Increase ZIndex for button
 Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1, 0)
 
 CollapseBtn.MouseButton1Click:Connect(function()
+    -- Calculate vertical position adjustment for centering the collapsed state
+    local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - MinHeight.Offset) / 2
+    
     if isExpanded then
         MainFrame:TweenSize(MinHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, 167.5), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3) -- Center adjustment for collapse
+        MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3) 
         
         -- Adjust Rainbow Border for collapsed state
         RainbowBorder:TweenSize(MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, 167.5), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
         
         isExpanded = false
     else
@@ -133,7 +141,7 @@ Left.Position = UDim2.new(0, 0, 0, 55)
 Left.BackgroundColor3 = Color3.fromRGB(30, 32, 42)
 Left.BorderSizePixel = 0
 Left.Parent = MainFrame
-
+Left.ZIndex = 2 -- INCREASE ZINDEX
 Instance.new("UICorner", Left).CornerRadius = UDim.new(0, 10)
 
 -- Left Title ("Features")
@@ -146,6 +154,7 @@ LeftTitle.BackgroundTransparency = 1
 LeftTitle.Position = UDim2.new(0, 15, 0, 10)
 LeftTitle.Size = UDim2.new(1, -20, 0, 20)
 LeftTitle.Parent = Left
+LeftTitle.ZIndex = 3 -- Increase ZIndex for text
 
 -- Input Creator (Updated for Minimum MS)
 local function createInput(labelText, defaultText, yPos)
@@ -158,6 +167,7 @@ local function createInput(labelText, defaultText, yPos)
     Label.Position = UDim2.new(0, 15, 0, yPos)
     Label.Size = UDim2.new(1, -30, 0, 18)
     Label.Parent = Left
+    Label.ZIndex = 3 -- Increase ZIndex for text
 
     local Box = Instance.new("TextBox")
     Box.Text = defaultText
@@ -169,6 +179,7 @@ local function createInput(labelText, defaultText, yPos)
     Box.Size = UDim2.new(1, -30, 0, 32)
     Box.BorderSizePixel = 0
     Box.Parent = Left
+    Box.ZIndex = 3 -- Increase ZIndex for input box
 
     Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 6)
 
@@ -178,11 +189,18 @@ end
 -- Feature 1: Minimum/sec (MS)
 local MinMSBox = createInput("Minimum/sec (MS)", "1000000000000000", 50)
 
--- Function to create feature buttons/toggles
-local function addLog(text)
-    -- Utility function placeholder (defined below)
+-- Log definition (must be defined first for toggles to use it)
+local LogBox = Instance.new("TextLabel")
+local LogScroll = Instance.new("ScrollingFrame")
+function addLog(text)
+    -- Add text and scroll to bottom
+    LogBox.Text = LogBox.Text .. "\n" .. text
+    task.wait() -- Wait a frame for AutomaticSize to update
+    LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset)
 end
 
+
+-- Function to create feature buttons/toggles
 local function createFeatureToggle(text, yPos)
     local Btn = Instance.new("TextButton")
     Btn.Text = text
@@ -196,6 +214,7 @@ local function createFeatureToggle(text, yPos)
     Btn.Size = UDim2.new(1, -30, 0, 40)
     Btn.BorderSizePixel = 0
     Btn.Parent = Left
+    Btn.ZIndex = 3 -- Increase ZIndex for button
 
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
     
@@ -227,14 +246,15 @@ AutoJoinBtn.TextSize = 16
 AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(40, 210, 120)
 local DefaultScanColor = AutoJoinBtn.BackgroundColor3
 AutoJoinBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-AutoJoinBtn.Position = UDim2.new(0, 15, 1, -115) -- Moved up to fit Persistent Auto Join
+AutoJoinBtn.Position = UDim2.new(0, 15, 1, -115) 
 AutoJoinBtn.Size = UDim2.new(1, -30, 0, 40)
 AutoJoinBtn.BorderSizePixel = 0
 AutoJoinBtn.Parent = Left
+AutoJoinBtn.ZIndex = 3 -- Increase ZIndex for button
 
 Instance.new("UICorner", AutoJoinBtn).CornerRadius = UDim.new(0, 8)
 
--- Status Label (Moved down)
+-- Status Label
 local Status = Instance.new("TextLabel")
 Status.Text = "Status: Idle"
 Status.Font = Enum.Font.GothamMedium
@@ -244,6 +264,7 @@ Status.BackgroundTransparency = 1
 Status.Position = UDim2.new(0, 15, 1, -25)
 Status.Size = UDim2.new(1, -30, 0, 20)
 Status.Parent = Left
+Status.ZIndex = 3 -- Increase ZIndex for text
 
 -- Yellow Separator Line (Between Left and Right Panels)
 local Separator = Instance.new("Frame")
@@ -252,6 +273,7 @@ Separator.Position = UDim2.new(0, 249, 0, 55)
 Separator.BackgroundColor3 = Color3.fromRGB(255, 230, 80) -- Yellow
 Separator.BorderSizePixel = 0
 Separator.Parent = MainFrame
+Separator.ZIndex = 2 -- INCREASE ZINDEX
 
 
 -- Right Panel (Logs)
@@ -261,7 +283,7 @@ Right.Position = UDim2.new(0, 260, 0, 55)
 Right.BackgroundColor3 = Color3.fromRGB(30, 32, 42)
 Right.BorderSizePixel = 0
 Right.Parent = MainFrame
-
+Right.ZIndex = 2 -- INCREASE ZINDEX
 Instance.new("UICorner", Right).CornerRadius = UDim.new(0, 10)
 
 local LogTitle = Instance.new("TextLabel")
@@ -273,6 +295,7 @@ LogTitle.BackgroundTransparency = 1
 LogTitle.Position = UDim2.new(0, 15, 0, 10)
 LogTitle.Size = UDim2.new(1, -20, 0, 20)
 LogTitle.Parent = Right
+LogTitle.ZIndex = 3 -- Increase ZIndex for text
 
 -- Yellow Line below Log Title
 local LogTitleSeparator = Instance.new("Frame")
@@ -281,10 +304,9 @@ LogTitleSeparator.Position = UDim2.new(0, 15, 0, 35)
 LogTitleSeparator.BackgroundColor3 = Color3.fromRGB(255, 230, 80) -- Yellow
 LogTitleSeparator.BorderSizePixel = 0
 LogTitleSeparator.Parent = Right
-
+LogTitleSeparator.ZIndex = 3 -- Increase ZIndex
 
 -- Log Box (ScrollingFrame)
-local LogScroll = Instance.new("ScrollingFrame")
 LogScroll.Position = UDim2.new(0, 15, 0, 45)
 LogScroll.Size = UDim2.new(1, -30, 1, -60)
 LogScroll.BackgroundColor3 = Color3.fromRGB(23, 24, 32)
@@ -294,10 +316,11 @@ LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 LogScroll.ScrollingDirection = Enum.ScrollingDirection.Y
 LogScroll.ScrollBarImageColor3 = Color3.fromRGB(50, 52, 65)
 LogScroll.Parent = Right
+LogScroll.ZIndex = 3 -- Increase ZIndex
 
 Instance.new("UICorner", LogScroll).CornerRadius = UDim.new(0, 8)
 
-local LogBox = Instance.new("TextLabel")
+-- LogBox (TextLabel inside LogScroll)
 LogBox.Name = "LogText"
 LogBox.Text = "Log Initialized. Set features and click 'Auto Join'."
 LogBox.Font = Enum.Font.Code
@@ -311,15 +334,10 @@ LogBox.TextXAlignment = Enum.TextXAlignment.Left
 LogBox.TextYAlignment = Enum.TextYAlignment.Top
 LogBox.AutomaticSize = Enum.AutomaticSize.Y
 LogBox.Parent = LogScroll
+LogBox.ZIndex = 4 -- Draw above the LogScroll background
 
--- Fake Auto Join Behavior (Utility function definition moved here)
-function addLog(text)
-    -- Add text and scroll to bottom
-    LogBox.Text = LogBox.Text .. "\n" .. text
-    task.wait() -- Wait a frame for AutomaticSize to update
-    LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset)
-end
 
+-- Fake Auto Join Behavior
 AutoJoinBtn.MouseButton1Click:Connect(function()
     -- Prevent re-scan while scanning
     if Status.Text == "Status: Auto-Joining..." then return end
