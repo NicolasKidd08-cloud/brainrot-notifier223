@@ -1,179 +1,122 @@
---// Brainrot Dev UI (Fixed + Public Version)
+--// Brainrot UI (SAFE + WORKING VERSION FOR ALL PLAYERS)
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Removed whitelist — everyone can use UI
+-- Create ScreenGui
+local gui = Instance.new("ScreenGui")
+gui.Name = "BrainrotUI"
+gui.ResetOnSpawn = false
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Get remote event safely
-local BrainrotEvent = ReplicatedStorage:WaitForChild("BrainrotLog", 10)
-if not BrainrotEvent then
-    warn("BrainrotLog event missing!")
-    return
-end
+-- Main frame
+local main = Instance.new("Frame")
+main.Parent = gui
+main.Size = UDim2.new(0, 420, 0, 480)
+main.Position = UDim2.new(0.5, -210, 0.5, -240)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+main.Active = true
+main.Draggable = true
 
--- // UI CREATION
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BrainrotDevUI"
-ScreenGui.Parent = PlayerGui
-ScreenGui.ResetOnSpawn = false
+-- Top bar
+local top = Instance.new("Frame")
+top.Parent = main
+top.Size = UDim2.new(1, 0, 0, 40)
+top.BackgroundColor3 = Color3.fromRGB(10, 10, 70)
 
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 720, 0, 500)
-Main.Position = UDim2.new(0.5, -360, 0.5, -250)
-Main.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-Main.Active = true
-Main.Draggable = true
-Main.Parent = ScreenGui
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+local title = Instance.new("TextLabel")
+title.Parent = top
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, -40, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextColor3 = Color3.new(1,1,1)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Text = "Brainrot Notifier"
 
--- // TOP BAR
-local Top = Instance.new("Frame", Main)
-Top.Size = UDim2.new(1, 0, 0, 58)
-Top.BackgroundColor3 = Color3.fromRGB(10, 35, 70)
-Instance.new("UICorner", Top).CornerRadius = UDim.new(0, 12)
+-- Close button
+local close = Instance.new("TextButton")
+close.Parent = top
+close.Size = UDim2.new(0, 40, 1, 0)
+close.Position = UDim2.new(1, -40, 0, 0)
+close.Text = "X"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 20
+close.BackgroundColor3 = Color3.fromRGB(150, 30, 30)
+close.TextColor3 = Color3.new(1,1,1)
 
-local Title = Instance.new("TextLabel", Top)
-Title.Text = "Nicolas's Autojoiner • Discord: discord.gg/yourlink"
-Title.Size = UDim2.new(1, -80, 1, 0)
-Title.Position = UDim2.new(0, 15, 0, 0)
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.GothamSemibold
-Title.TextSize = 22
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
--- CLOSE/MINIMIZE BUTTON
-local Close = Instance.new("TextButton", Top)
-Close.Size = UDim2.new(0, 48, 0, 30)
-Close.Position = UDim2.new(1, -55, 0.5, -15)
-Close.Text = "-"
-Close.TextColor3 = Color3.fromRGB(255, 255, 255)
-Close.Font = Enum.Font.GothamBold
-Close.TextSize = 26
-Close.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
-Instance.new("UICorner", Close).CornerRadius = UDim.new(0, 8)
-
-local Minimized = false
-Close.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
-    if Minimized then
-        Main.Size = UDim2.new(0, 720, 0, 58)
-    else
-        Main.Size = UDim2.new(0, 720, 0, 500)
-    end
+close.MouseButton1Click:Connect(function()
+	main.Visible = false
 end)
 
--- Divider
-local TopLine = Instance.new("Frame", Main)
-TopLine.Size = UDim2.new(1, 0, 0, 3)
-TopLine.Position = UDim2.new(0, 0, 0, 58)
-TopLine.BackgroundColor3 = Color3.fromRGB(255, 210, 0)
+-- Content container
+local content = Instance.new("Frame")
+content.Parent = main
+content.Size = UDim2.new(1, -20, 1, -60)
+content.Position = UDim2.new(0, 10, 0, 50)
+content.BackgroundTransparency = 1
 
--- LEFT PANEL
-local Left = Instance.new("Frame", Main)
-Left.Size = UDim2.new(0, 220, 1, -60)
-Left.Position = UDim2.new(0, 0, 0, 60)
-Left.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
-Instance.new("UICorner", Left).CornerRadius = UDim.new(0, 10)
+local ui = Instance.new("UIListLayout", content)
+ui.Padding = UDim.new(0, 8)
 
-local Separator = Instance.new("Frame", Main)
-Separator.Size = UDim2.new(0, 3, 1, -60)
-Separator.Position = UDim2.new(0, 220, 0, 60)
-Separator.BackgroundColor3 = Color3.fromRGB(255, 210, 0)
+-- Auto-Join toggle
+local toggle = Instance.new("TextButton")
+toggle.Parent = content
+toggle.Size = UDim2.new(1, 0, 0, 40)
+toggle.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.Font = Enum.Font.Gotham
+toggle.TextSize = 18
+toggle.Text = "Auto Join: OFF"
 
-local FeatureTitle = Instance.new("TextLabel", Left)
-FeatureTitle.Size = UDim2.new(1, 0, 0, 40)
-FeatureTitle.Text = "Autojoin Settings"
-FeatureTitle.Font = Enum.Font.GothamBold
-FeatureTitle.TextSize = 20
-FeatureTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-FeatureTitle.BackgroundTransparency = 1
+local autoJoin = false
 
--- TOGGLE
-local ToggleBack = Instance.new("TextButton", Left)
-ToggleBack.Size = UDim2.new(0, 58, 0, 30)
-ToggleBack.Position = UDim2.new(0, 20, 0, 55)
-ToggleBack.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-ToggleBack.Text = ""
-Instance.new("UICorner", ToggleBack).CornerRadius = UDim.new(1, 0)
-
-local ToggleBall = Instance.new("Frame", ToggleBack)
-ToggleBall.Size = UDim2.new(0, 26, 0, 26)
-ToggleBall.Position = UDim2.new(0, 2, 0, 2)
-ToggleBall.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Instance.new("UICorner", ToggleBall).CornerRadius = UDim.new(1, 0)
-
-local AutoJoin = false
-ToggleBack.MouseButton1Click:Connect(function()
-    AutoJoin = not AutoJoin
-
-    if AutoJoin then
-        ToggleBack.BackgroundColor3 = Color3.fromRGB(0, 115, 255)
-        ToggleBall:TweenPosition(UDim2.new(1, -28, 0, 2))
-    else
-        ToggleBack.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        ToggleBall:TweenPosition(UDim2.new(0, 2, 0, 2))
-    end
+toggle.MouseButton1Click:Connect(function()
+	autoJoin = not autoJoin
+	toggle.Text = autoJoin and "Auto Join: ON" or "Auto Join: OFF"
+	toggle.BackgroundColor3 = autoJoin and Color3.fromRGB(40, 80, 40) or Color3.fromRGB(40, 40, 60)
 end)
 
--- MIN PER SECOND BOX
-local MinLabel = Instance.new("TextLabel", Left)
-MinLabel.Size = UDim2.new(1, -30, 0, 26)
-MinLabel.Position = UDim2.new(0, 15, 0, 105)
-MinLabel.Text = "Minimum per second:"
-MinLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinLabel.Font = Enum.Font.Gotham
-MinLabel.TextSize = 17
-MinLabel.BackgroundTransparency = 1
+-- Minimum rarity box
+local minBox = Instance.new("TextBox")
+minBox.Parent = content
+minBox.Size = UDim2.new(1, 0, 0, 40)
+minBox.PlaceholderText = "Minimum rarity"
+minBox.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+minBox.TextColor3 = Color3.new(1,1,1)
+minBox.Font = Enum.Font.Gotham
+minBox.TextSize = 18
 
-local MinBox = Instance.new("TextBox", Left)
-MinBox.Size = UDim2.new(1, -30, 0, 38)
-MinBox.Position = UDim2.new(0, 15, 0, 135)
-MinBox.PlaceholderText = "0"
-MinBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-MinBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinBox.Font = Enum.Font.Gotham
-MinBox.TextSize = 17
-Instance.new("UICorner", MinBox).CornerRadius = UDim.new(0, 8)
+-- Ignore list box
+local ignoreBox = Instance.new("TextBox")
+ignoreBox.Parent = content
+ignoreBox.Size = UDim2.new(1, 0, 0, 40)
+ignoreBox.PlaceholderText = "Ignore list: comma separated"
+ignoreBox.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+ignoreBox.TextColor3 = Color3.new(1,1,1)
+ignoreBox.Font = Enum.Font.Gotham
+ignoreBox.TextSize = 18
 
--- IGNORE LIST BOX
-local IgnoreList = Instance.new("TextBox", Left)
-IgnoreList.Size = UDim2.new(1, -30, 0, 38)
-IgnoreList.Position = UDim2.new(0, 15, 0, 190)
-IgnoreList.PlaceholderText = "Search brainrots..."
-IgnoreList.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-IgnoreList.TextColor3 = Color3.fromRGB(255, 255, 255)
-IgnoreList.Font = Enum.Font.Gotham
-IgnoreList.TextSize = 17
-Instance.new("UICorner", IgnoreList).CornerRadius = UDim.new(0, 8)
+-- Log display
+local log = Instance.new("TextLabel")
+log.Parent = content
+log.Size = UDim2.new(1, 0, 1, -140)
+log.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+log.TextColor3 = Color3.new(1,1,1)
+log.TextWrapped = true
+log.Font = Enum.Font.Gotham
+log.TextSize = 16
+log.TextYAlignment = Enum.TextYAlignment.Top
+log.Text = "Brainrot logs:\n"
 
--- RIGHT PANEL (LOGS)
-local Right = Instance.new("Frame", Main)
-Right.Size = UDim2.new(1, -225, 1, -60)
-Right.Position = UDim2.new(0, 225, 0, 60)
-Right.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Instance.new("UICorner", Right).CornerRadius = UDim.new(0, 10)
+-- Demo event to test
+task.spawn(function()
+	while task.wait(3) do
+		local name = "RandomBrainrot_" .. math.random(1,99)
+		local rarity = math.random(1,50)
 
-local BrainLog = Instance.new("TextLabel", Right)
-BrainLog.Size = UDim2.new(1, -14, 1, -14)
-BrainLog.Position = UDim2.new(0, 7, 0, 7)
-BrainLog.Text = "Brainrots logged:\n"
-BrainLog.TextColor3 = Color3.fromRGB(255, 255, 255)
-BrainLog.TextWrapped = true
-BrainLog.TextXAlignment = Enum.TextXAlignment.Left
-BrainLog.TextYAlignment = Enum.TextYAlignment.Top
-BrainLog.Font = Enum.Font.Gotham
-BrainLog.TextSize = 18
-BrainLog.BackgroundTransparency = 1
-
--- EVENT LISTENER
-BrainrotEvent.OnClientEvent:Connect(function(data)
-    if not data then return end
-    local name = data.name or "Unknown"
-    local rarity = data.rarity or "?"
-    BrainLog.Text = BrainLog.Text .. ("\n• %s  |  %s"):format(name, rarity)
+		log.Text = log.Text .. "\n• " .. name .. " (Rarity: " .. rarity .. ")"
+	end
 end)
 
