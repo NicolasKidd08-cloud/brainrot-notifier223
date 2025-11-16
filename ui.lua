@@ -1,6 +1,3 @@
--- Nick & Scrap’s Auto Jointer – Compact Final (650 x 400) 
--- UI-only, safe. Use AddLogRow({name="...", ms=1100}) to add real logs.
-
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Player = Players.LocalPlayer
@@ -10,15 +7,15 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 local existing = PlayerGui:FindFirstChild("NickScrapAutoJoiner")
 if existing then existing:Destroy() end
 
--- UI size (compact)
-local UI_W, UI_H = 650, 400
+-- UI size (compact and resized to fit better)
+local UI_W, UI_H = 650, 350  -- smaller height to take up less room
 local FULL_SIZE = UDim2.new(0, UI_W, 0, UI_H)
-local HEADER_H = 50
+local HEADER_H = 45  -- smaller header height
 local CLOSED_SIZE = UDim2.new(0, UI_W, 0, HEADER_H)
 
 -- Left panel width and spacing
 local LEFT_MARGIN = 14
-local LEFT_W = 250
+local LEFT_W = 230  -- slightly narrower left panel
 local GAP = 14
 local RIGHT_X = LEFT_MARGIN + LEFT_W + GAP
 local RIGHT_W = UI_W - RIGHT_X - LEFT_MARGIN
@@ -403,204 +400,4 @@ local function CloseUI()
 	local t = TweenService:Create(Main, tweenInfo, { Size = CLOSED_SIZE })
 	t:Play(); t.Completed:Wait()
 	Content.Visible = false
-	visible = false
-end
-local function OpenUI()
-	if visible then return end
-	Content.Visible = true
-	local t = TweenService:Create(Main, tweenInfo, { Size = FULL_SIZE })
-	t:Play(); t.Completed:Wait()
-	visible = true
-end
-
-ToggleBtn.MouseButton1Click:Connect(function() if visible then CloseUI() else OpenUI() end end)
-
--- status updater
-task.spawn(function()
-	while true do
-		Status.Text = AutoJoinEnabled and "Status: Working..." or "Status: Idle"
-		task.wait(0.2)
-	end
-end)
-
--- keyboard toggle M
-local UserInput = game:GetService("UserInputService")
-UserInput.InputBegan:Connect(function(input, gp)
-	if gp then return end
-	if input.KeyCode == Enum.KeyCode.M then
-		if visible then CloseUI() else OpenUI() end
-	end
-end)
-
--- finalize initial state
-Content.Visible = true
-Main.Size = FULL_SIZE
-
--- expose AddLogRow globally
-_G.NickScrap_AddLogRow = AddLogRow
-
--- NOTE:
--- Use AddLogRow({ name = "Dragon Cannelloni", ms = 1100 })
--- to add a real log. Nothing appears until you call that.
--- Replace JoinServer(...) with your teleport or RemoteEvent logic when ready.
-
-
-	joinBtn.MouseButton1Click:Connect(doJoin)
-
-	return data
-end
-
--- AddLogRow: creates a row at top. If AutoJoinEnabled, triggers join
-local function AddLogRow(name, money)
-	-- create row
-	local data = CreateLogRow(name, money)
-	-- insert at top by setting LayoutOrder negative increasing
-	-- we'll shift existing children layout orders by +1
-	for i, child in ipairs(logsScroll:GetChildren()) do
-		-- only UI elements with LayoutOrder set by us
-		if child:IsA("Frame") then
-			local lo = child.LayoutOrder or 0
-			child.LayoutOrder = lo + 1
-		end
-	end
-	data.frame.LayoutOrder = 0
-
-	-- update canvas size
-	local total = 0
-	for _, ch in ipairs(logsScroll:GetChildren()) do
-		if ch:IsA("Frame") then
-			total = total + ch.AbsoluteSize.Y + logsList.Padding.Offset
-		end
-	end
-	logsScroll.CanvasSize = UDim2.new(0, 0, 0, total + 12)
-
-	-- If AutoJoin ON then try to join
-	if AutoJoinEnabled then
-		-- run join in a safe pcall
-		coroutine.wrap(function()
-			-- attempt join (respects PersistentEnabled)
-			local attempts = PersistentEnabled and 6 or 1
-			local delayBetween = tonumber(minBox.Text) or 1
-			local success = false
-			for i=1, attempts do
-				-- call local placeholder join
-				local ok, err = pcall(function()
-					JoinServer(data)
-				end)
-				if ok then
-					success = true
-					AddLog("[AUTO] Joined "..tostring(name).." on attempt "..i)
-					break
-				else
-					AddLog("[AUTO] Join attempt "..i.." failed for "..tostring(name))
-				end
-				if i < attempts then
-					task.wait(math.max(0.6, delayBetween/10)) -- small wait; ms text is millions label so make small pause
-				end
-			end
-			if not success then
-				AddLog("[AUTO] Failed to auto-join "..tostring(name))
-			end
-		end)()
-	end
-end
-
--- AddLog helper for textual log area (not the row table)
-local function AddLog(txt)
-	-- append to invisible textual log (we'll also add to List if desired)
-	print(txt)
-	-- Also add a small textual row as a backup log (optional)
-end
-
--- Placeholder local join function (you can replace this)
-function JoinServer(data)
-	-- data = { name=..., money=..., frame=..., joinBtn=... }
-	-- This placeholder simulates success. Replace with TeleportService:TeleportToPlaceInstance or RemoteEvent call as needed.
-	AddLog("[JoinServer] Simulated join for " .. tostring(data.name) .. " — " .. tostring(data.money))
-	-- Visual feedback: flash row background green briefly
-	local f = data.frame
-	local orig = f.BackgroundColor3
-	f.BackgroundColor3 = Color3.fromRGB(30,80,50)
-	task.wait(0.18)
-	if f and f.Parent then
-		f.BackgroundColor3 = orig
-	end
-	return true
-end
-
--- toggles behavior
-local AutoJoinEnabled = false
-local PersistentEnabled = false
-
-AutoJoinBtn.MouseButton1Click:Connect(function()
-	AutoJoinEnabled = not AutoJoinEnabled
-	AutoJoinBtn.Text = AutoJoinEnabled and "Working..." or "Auto Join"
-end)
-
-PersistentBtn.MouseButton1Click:Connect(function()
-	PersistentEnabled = not PersistentEnabled
-	PersistentBtn.Text = PersistentEnabled and "Running..." or "Persistent Rejoin"
-end)
-
--- open/close tween functions
-local tweenInfo = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-local contentVisible = true
-
-local function CloseUI()
-	if not contentVisible then return end
-	local tween = TweenService:Create(MainFrame, tweenInfo, {Size = CLOSED_SIZE})
-	tween:Play()
-	tween.Completed:Wait()
-	Content.Visible = false
-	contentVisible = false
-	AddLog("[SYSTEM] UI closed (header visible).")
-end
-
-local function OpenUI()
-	if contentVisible then return end
-	Content.Visible = true
-	local tween = TweenService:Create(MainFrame, tweenInfo, {Size = FULL_SIZE})
-	tween:Play()
-	tween.Completed:Wait()
-	contentVisible = true
-	AddLog("[SYSTEM] UI opened.")
-end
-
-ToggleUI.MouseButton1Click:Connect(function()
-	if contentVisible then CloseUI() else OpenUI() end
-end)
-
--- Status updater
-task.spawn(function()
-	while true do
-		Status.Text = AutoJoinEnabled and "Status: Working..." or "Status: Idle"
-		task.wait(0.2)
-	end
-end)
-
--- keyboard M toggle (debug)
-local UserInputService = game:GetService("UserInputService")
-UserInputService.InputBegan:Connect(function(input, gp)
-	if gp then return end
-	if input.KeyCode == Enum.KeyCode.M then
-		if contentVisible then CloseUI() else OpenUI() end
-	end
-end)
-
--- ensure initial open
-Content.Visible = true
-MainFrame.Size = FULL_SIZE
-
--- ---------------------------
--- Example usage / demo logs
--- ---------------------------
--- You can remove these demo calls later. They show how rows appear.
-task.delay(0.6, function() AddLogRow("Dragon Connectioni", 1100) end)
-task.delay(1.4, function() AddLogRow("Estok Sekolah", 135) end)
-task.delay(2.0, function() AddLogRow("Ketupat Kepat", 280) end)
-task.delay(2.8, function() AddLogRow("Ketupat Kepat", 490) end)
-task.delay(3.6, function() AddLogRow("New Player", 10) end)
-
--- Expose AddLogRow to global so other scripts can call it:
-_G.NickScrap_AddLogRow = AddLogRow
-
+	
