@@ -1,4 +1,4 @@
--- Nick & Scrap's Auto Jointer UI (with working minimize button)
+-- Nick & Scrap's Auto Jointer UI (with working collapse using button "X")
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -18,7 +18,7 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 
--- TopBar
+-- Top bar
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Size = UDim2.new(1, 0, 0, 40)
@@ -29,7 +29,7 @@ TopBar.Parent = MainFrame
 -- Title Label
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
-Title.Text = "Nick & Scrap's Auto Jointer - Discord/PGT"
+Title.Text = "Nick & Scrap's Auto Jointer - Discord / PGT"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 17
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -39,10 +39,10 @@ Title.Position = UDim2.new(0, 10, 0, 0)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
--- ^ Toggle Button (your real button)
+-- YOUR REAL TOGGLE BUTTON (named "X")
 local Toggle = Instance.new("TextButton")
-Toggle.Name = "^"
-Toggle.Text = "^"
+Toggle.Name = "X"
+Toggle.Text = "X"
 Toggle.Font = Enum.Font.GothamBold
 Toggle.TextSize = 18
 Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -51,7 +51,7 @@ Toggle.Size = UDim2.new(0, 40, 1, 0)
 Toggle.Position = UDim2.new(1, -40, 0, 0)
 Toggle.Parent = TopBar
 
--- Body Frame (everything that hides on minimize)
+-- Body (this hides when collapsed)
 local Body = Instance.new("Frame")
 Body.Name = "Body"
 Body.Size = UDim2.new(1, 0, 1, -40)
@@ -59,7 +59,7 @@ Body.Position = UDim2.new(0, 0, 0, 40)
 Body.BackgroundTransparency = 1
 Body.Parent = MainFrame
 
--- Discord Button
+-- Discord button
 local DiscordButton = Instance.new("TextButton")
 DiscordButton.Name = "DiscordButton"
 DiscordButton.Text = "Copy Discord: https://discord.gg/123abc"
@@ -75,7 +75,7 @@ DiscordButton.MouseButton1Click:Connect(function()
 	setclipboard("https://discord.gg/123abc")
 end)
 
--- Minimize Logic
+-- Collapse Logic (attached to your "X")
 local Minimized = false
 local FullHeight = 320
 local MinimizedHeight = 40
@@ -84,7 +84,6 @@ Toggle.MouseButton1Click:Connect(function()
 	Minimized = not Minimized
 
 	if Minimized then
-		-- collapse
 		Body.Visible = false
 		MainFrame:TweenSize(
 			UDim2.new(0, 420, 0, MinimizedHeight),
@@ -92,9 +91,8 @@ Toggle.MouseButton1Click:Connect(function()
 			Enum.EasingStyle.Quad,
 			0.25
 		)
-		Toggle.Text = "v"
+		Toggle.Text = "v"  -- arrow down when closed
 	else
-		-- expand
 		MainFrame:TweenSize(
 			UDim2.new(0, 420, 0, FullHeight),
 			Enum.EasingDirection.Out,
@@ -103,6 +101,6 @@ Toggle.MouseButton1Click:Connect(function()
 		)
 		task.wait(0.22)
 		Body.Visible = true
-		Toggle.Text = "^"
+		Toggle.Text = "X"  -- back to X when open
 	end
 end)
