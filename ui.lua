@@ -1,110 +1,143 @@
---=== UI SCRIPT WITH FIXED TOGGLE + REAL DISCORD COPY ===--
+--[[ 
+    NICK & SCRAP’s AUTO JOINTER (OG UI FIXED)
+    FIXES:
+    - Discord actually copies
+    - Red button collapses ONLY header, no jumping
+    - Proper draggable UI, no auto teleport-to-corner
+]]
 
 local Players = game:GetService("Players")
-local StarterGui = game:GetService("StarterGui")
-local player = Players.LocalPlayer
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local UserInputService = game:GetService("UserInputService")
 
--- Clipboard Copy Function
-local function copy(text)
-    if setclipboard then
-        setclipboard(text)
-    elseif toclipboard then
-        toclipboard(text)
-    end
-end
-
--- UI Creation
+-- ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoJointerUI"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
+ScreenGui.Parent = PlayerGui
 
+-- Main Frame
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 830, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -415, 0.35, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+MainFrame.Size = UDim2.new(0, 720, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -360, 0.5, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 35)
 MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 14)
 
-local UICorner = Instance.new("UICorner", MainFrame)
-UICorner.CornerRadius = UDim.new(0, 8)
+-- Rainbow Border
+local Border = Instance.new("Frame")
+Border.Size = UDim2.new(0, 724, 0, 384)
+Border.Position = MainFrame.Position - UDim2.new(0,2,0,2)
+Border.BackgroundColor3 = Color3.fromRGB(255,0,0)
+Border.BorderSizePixel = 0
+Border.Parent = ScreenGui
+Instance.new("UICorner", Border).CornerRadius = UDim.new(0,16)
 
--- TOP BAR
-local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(1, 0, 0, 40)
-TopBar.BackgroundColor3 = Color3.fromRGB(35, 35, 46)
-TopBar.BorderSizePixel = 0
-TopBar.Parent = MainFrame
+-- Rainbow Effect
+task.spawn(function()
+    while true do
+        local h = (tick() % 5) / 5
+        Border.BackgroundColor3 = Color3.fromHSV(h,1,1)
+        task.wait()
+    end
+end)
+
+-- HEADER
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,45)
+Header.BackgroundColor3 = Color3.fromRGB(33,35,46)
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0,14)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0, 600, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.GothamBold
 Title.Text = "Nick and Scrap's Auto Jointer"
-Title.TextColor3 = Color3.fromRGB(0, 255, 120)
+Title.Size = UDim2.new(1,-150,0,25)
+Title.Position = UDim2.new(0,20,0,5)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamSemibold
 Title.TextSize = 20
+Title.TextColor3 = Color3.fromRGB(80,255,130)
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = TopBar
+Title.Parent = Header
 
--- DISCORD LABEL (CLICK TO COPY)
-local DiscordLabel = Instance.new("TextButton")
-DiscordLabel.Size = UDim2.new(0, 350, 1, 0)
-DiscordLabel.Position = UDim2.new(0, 10, 0, 20)
-DiscordLabel.BackgroundTransparency = 1
-DiscordLabel.Text = "Discord: discord.gg/pAgSFBKj (Click to Copy)"
-DiscordLabel.Font = Enum.Font.Gotham
-DiscordLabel.TextColor3 = Color3.fromRGB(120, 200, 255)
-DiscordLabel.TextSize = 14
-DiscordLabel.TextXAlignment = Enum.TextXAlignment.Left
-DiscordLabel.Parent = MainFrame
+-- DISCORD BUTTON (REAL COPY)
+local DiscordBtn = Instance.new("TextButton")
+DiscordBtn.Size = UDim2.new(0, 240, 0, 15)
+DiscordBtn.Position = UDim2.new(0, 20, 0, 25)
+DiscordBtn.BackgroundTransparency = 1
+DiscordBtn.Text = "Discord: discord.gg/pAgSFBKj (Click to Copy)"
+DiscordBtn.Font = Enum.Font.GothamBold
+DiscordBtn.TextSize = 13
+DiscordBtn.TextColor3 = Color3.fromRGB(80,255,130)
+DiscordBtn.TextXAlignment = Enum.TextXAlignment.Left
+DiscordBtn.Parent = Header
 
--- COPY-TO-CLIPBOARD BEHAVIOR
-DiscordLabel.MouseButton1Click:Connect(function()
-    copy("https://discord.gg/pAgSFBKj")
+DiscordBtn.MouseButton1Click:Connect(function()
+    setclipboard("https://discord.gg/pAgSFBKj")
+    DiscordBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    task.wait(0.12)
+    DiscordBtn.TextColor3 = Color3.fromRGB(80,255,130)
 end)
 
--- CLOSE BUTTON (COLLAPSE)
-local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -40, 0, 5)
-CloseButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-CloseButton.Text = "X"
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.TextColor3 = Color3.new(1,1,1)
-CloseButton.TextSize = 18
-CloseButton.Parent = TopBar
+-- COLLAPSE BUTTON FIXED (NO JUMPING)
+local CollapseBtn = Instance.new("TextButton")
+CollapseBtn.Size = UDim2.new(0,18,0,18)
+CollapseBtn.Position = UDim2.new(1,-40,0.5,-9)
+CollapseBtn.BackgroundColor3 = Color3.fromRGB(255,75,70)
+CollapseBtn.TextColor3 = Color3.fromRGB(255,255,255)
+CollapseBtn.Text = "X"
+CollapseBtn.Font = Enum.Font.SourceSansBold
+CollapseBtn.TextSize = 14
+CollapseBtn.BorderSizePixel = 0
+CollapseBtn.Parent = Header
+Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1,0)
 
-local CloseCorner = Instance.new("UICorner", CloseButton)
-CloseCorner.CornerRadius = UDim.new(0, 6)
+local isCollapsed = false
 
--- MAIN CONTENT (THE PART THAT HIDES)
-local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1, -20, 1, -70)
-Content.Position = UDim2.new(0, 10, 0, 60)
-Content.BackgroundTransparency = 1
-Content.Parent = MainFrame
-
--- You put your old UI contents here:
--- buttons, logs, features, etc.
--- They will collapse correctly.
-
---------------------
--- COLLAPSE LOGIC --
---------------------
-local collapsed = false
-local fullHeight = 400
-local collapsedHeight = 60
-
-CloseButton.MouseButton1Click:Connect(function()
-    collapsed = not collapsed
-
-    if collapsed then
-        Content.Visible = false
-        MainFrame.Size = UDim2.new(0, 830, 0, collapsedHeight)
+CollapseBtn.MouseButton1Click:Connect(function()
+    if not isCollapsed then
+        MainFrame:TweenSize(UDim2.new(0,720,0,45),"Out","Quad",0.25)
+        Border:TweenSize(UDim2.new(0,724,0,49),"Out","Quad",0.25)
     else
-        Content.Visible = true
-        MainFrame.Size = UDim2.new(0, 830, 0, fullHeight)
+        MainFrame:TweenSize(UDim2.new(0,720,0,380),"Out","Quad",0.25)
+        Border:TweenSize(UDim2.new(0,724,0,384),"Out","Quad",0.25)
+    end
+    isCollapsed = not isCollapsed
+end)
+
+-- UI DRAGGING FIXED (NO TELEPORTING)
+local dragging = false
+local dragStart, startPos
+
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
     end
 end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        Border.Position = MainFrame.Position - UDim2.new(0,2,0,2)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- THE REST OF YOUR UI CODE (LEFT PANEL, LOGS, BUTTONS)
+-- NOTHING WAS CHANGED HERE.
