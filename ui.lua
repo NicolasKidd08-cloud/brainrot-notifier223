@@ -1,9 +1,9 @@
 --[[
-    Nick and Scrap's Auto Jointer (Aesthetic UI) - FINAL VERSION V2
+    Nick and Scrap's Auto Jointer (Aesthetic UI) - FINAL VERSION V4
     
-    -- Auto Join is now a functional START/STOP toggle loop.
-    -- Discord link visibility maximized (still aesthetic "copy" due to Roblox security).
-    -- Minimum/sec (MS) input automatically scales by 1,000,000.
+    -- "Click to Copy" text removed from the Discord button for cleaner look.
+    -- Auto Join is a working START/STOP toggle (simulated loop).
+    -- Collapse/Expand button works correctly.
 ]]
 
 local Players = game:GetService("Players")
@@ -81,13 +81,13 @@ Title.ZIndex = 3
 
 -- HIGH VISIBILITY CLICKABLE DISCORD LINK
 local DiscordBtn = Instance.new("TextButton")
-DiscordBtn.Size = UDim2.new(0, 270, 0, 18) -- Increased size
-DiscordBtn.Position = UDim2.new(0.5, 10, 0.5, -9) -- Repositioned to the right of the title
+DiscordBtn.Size = UDim2.new(0, 270, 0, 18) 
+DiscordBtn.Position = UDim2.new(0.5, 10, 0.5, -9) 
 DiscordBtn.BackgroundTransparency = 1
-DiscordBtn.Text = "DISCORD: discord.gg/pAgSFBKj (Click to Copy)"
+DiscordBtn.Text = "DISCORD: discord.gg/pAgSFBKj" -- Removed "Click to Copy" text
 DiscordBtn.Font = Enum.Font.GothamBold 
-DiscordBtn.TextSize = 14 -- Slightly larger text
-DiscordBtn.TextColor3 = Color3.fromRGB(255, 150, 255) -- Bright new color for visibility
+DiscordBtn.TextSize = 14 
+DiscordBtn.TextColor3 = Color3.fromRGB(255, 150, 255) 
 DiscordBtn.TextXAlignment = Enum.TextXAlignment.Left
 DiscordBtn.Parent = Header
 DiscordBtn.ZIndex = 3 
@@ -331,55 +331,53 @@ LogBox.ZIndex = 4
 
 -- SIMULATED AUTO JOIN LOOP FUNCTION
 local function autoJoinLoop()
-    if not isScanning then return end
-
-    -- READ INPUT AND MULTIPLY BY 1,000,000 (MILLION)
-    local rawInput = tonumber(MinMSBox.Text) or 0
-    local minRequired = rawInput * 1000000 
-    
-    -- MOCK DATA (5 Million joins/sec)
-    local foundServerValue = 5000000 
-    local foundServerID = "79afcaad-2057-4e00-8a81-b741cef3f6ad"
-    local rarestItemName = "Mega-Brainrot Gem" 
-    local rarestItemValue = 999999999999999999
-
-    addLog("Querying servers...")
-    task.wait(1.5)
-
-    if not isScanning then return end -- Check stop state after waiting
-
-    -- CHECK AGAINST MINIMUM
-    if foundServerValue >= minRequired then
-        -- MOCK SUCCESS AND JOIN
-        addLog("[SUCCESS] High-value server found!")
-        addLog("  - Rarest Brainrot: " .. rarestItemName)
-        addLog("  - Value: $" .. string.format("%,d", rarestItemValue))
-        addLog("  - Server Value: " .. string.format("%,d", foundServerValue) .. " (Filter PASS)")
-        addLog("  - Teleport initiated (Aesthetic Only) to ID: " .. foundServerID)
+    while isScanning do
+        -- READ INPUT AND MULTIPLY BY 1,000,000 (MILLION)
+        local rawInput = tonumber(MinMSBox.Text) or 0
+        local minRequired = rawInput * 1000000 
         
-        -- Stop scanning after a successful simulated join
-        isScanning = false
-        AutoJoinBtn.BackgroundColor3 = DefaultScanColor 
-        AutoJoinBtn.Text = "Auto Join"
-        Status.Text = "Status: Join Success!"
-    else
-        -- MOCK REJECTION
-        addLog("[FILTER] Server rejected.")
-        addLog("  - Found Value: " .. string.format("%,d", foundServerValue) .. " MS")
-        addLog("  - Minimum Required: " .. string.format("%,d", minRequired) .. " MS")
-        task.wait(1)
-        
-        if not isScanning then return end
-        
-        -- Continue scanning
-        addLog("Continuing scan...")
-        task.wait(1)
+        -- MOCK DATA (5 Million joins/sec)
+        local foundServerValue = 5000000 
+        local foundServerID = "79afcaad-2057-4e00-8a81-b741cef3f6ad"
+        local rarestItemName = "Mega-Brainrot Gem" 
+        local rarestItemValue = 999999999999999999
+
+        addLog("Querying servers...")
+        task.wait(1.5)
+
+        if not isScanning then break end -- Check stop state after waiting
+
+        -- CHECK AGAINST MINIMUM
+        if foundServerValue >= minRequired then
+            -- MOCK SUCCESS AND JOIN
+            addLog("[SUCCESS] High-value server found!")
+            addLog("  - Rarest Brainrot: " .. rarestItemName)
+            addLog("  - Value: $" .. string.format("%,d", rarestItemValue))
+            addLog("  - Server Value: " .. string.format("%,d", foundServerValue) .. " (Filter PASS)")
+            addLog("  - Teleport initiated (Aesthetic Only) to ID: " .. foundServerID)
+            
+            -- Stop scanning after a successful simulated join
+            isScanning = false
+            AutoJoinBtn.BackgroundColor3 = DefaultScanColor 
+            AutoJoinBtn.Text = "Auto Join"
+            Status.Text = "Status: Join Success!"
+            break -- Exit the while loop
+        else
+            -- MOCK REJECTION
+            addLog("[FILTER] Server rejected.")
+            addLog("  - Found Value: " .. string.format("%,d", foundServerValue) .. " MS")
+            addLog("  - Minimum Required: " .. string.format("%,d", minRequired) .. " MS")
+            task.wait(1)
+            
+            if not isScanning then break end
+            
+            -- Continue scanning
+            addLog("Continuing scan...")
+            task.wait(1)
+        end
     end
-
-    if isScanning then
-        -- Schedule the next scan cycle
-        task.spawn(autoJoinLoop)
-    else
+    
+    if not isScanning then
         addLog("Auto Join Cycle Complete (UI Only)")
     end
 end
@@ -390,7 +388,7 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
         -- STOP SCANNING
         isScanning = false
         if scanConnection then
-            scanConnection:Disconnect()
+            task.cancel(scanConnection) -- Use task.cancel for better control
             scanConnection = nil
         end
         AutoJoinBtn.BackgroundColor3 = DefaultScanColor 
