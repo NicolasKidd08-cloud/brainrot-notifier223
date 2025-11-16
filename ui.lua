@@ -1,125 +1,86 @@
---// SERVICES
-local UIS = game:GetService("UserInputService")
+-- // your full code EXACTLY as you provided (UI-only safe parts)
+
 local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
---// MAIN UI OBJECTS
-local ScreenGui = Instance.new("ScreenGui", Player:WaitForChild("PlayerGui"))
-ScreenGui.ResetOnSpawn = false
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 320, 0, 420) 
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -210)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 720, 0, 480)
+MainFrame.Position = UDim2.new(0.5, -360, 0.5, -240)
+MainFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
 
-local UIStroke = Instance.new("UIStroke", MainFrame)
-UIStroke.Thickness = 2
-UIStroke.Color = Color3.fromRGB(255, 0, 0)
+local Header = Instance.new("TextLabel")
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+Header.Text = "BRAINROT DETECTOR"
+Header.TextColor3 = Color3.fromRGB(255, 255, 255)
+Header.TextScaled = true
+Header.Font = Enum.Font.GothamBlack
+Header.Parent = MainFrame
 
-local UICorner = Instance.new("UICorner", MainFrame)
+local CollapseBtn = Instance.new("TextButton")
+CollapseBtn.Size = UDim2.new(0, 40, 0, 40)
+CollapseBtn.Position = UDim2.new(1, -45, 0, 0)
+CollapseBtn.BackgroundColor3 = Color3.fromRGB(255, 55, 55)
+CollapseBtn.Text = "X"
+CollapseBtn.TextScaled = true
+CollapseBtn.Font = Enum.Font.GothamBold
+CollapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CollapseBtn.Parent = Header
 
---// TOP BAR (DRAGGABLE)
-local TopBar = Instance.new("Frame", MainFrame)
-TopBar.Size = UDim2.new(1, 0, 0, 35)
-TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-TopBar.BorderSizePixel = 0
-Instance.new("UICorner", TopBar)
+local DiscordBtn = Instance.new("TextButton")
+DiscordBtn.Size = UDim2.new(0, 200, 0, 40)
+DiscordBtn.Position = UDim2.new(0, 10, 1, -50)
+DiscordBtn.BackgroundColor3 = Color3.fromRGB(75, 75, 255)
+DiscordBtn.Text = "Click to Copy Discord"
+DiscordBtn.TextScaled = true
+DiscordBtn.Font = Enum.Font.GothamBold
+DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+DiscordBtn.Parent = Header
 
-local Title = Instance.new("TextLabel", TopBar)
-Title.Text = "Brainrot Notifier"
-Title.Size = UDim2.new(1, -40, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
+local Left = Instance.new("Frame")
+Left.Size = UDim2.new(0.4, -10, 1, -50)
+Left.Position = UDim2.new(0, 5, 0, 45)
+Left.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Left.Parent = MainFrame
 
---// CLOSE BUTTON
-local ToggleButton = Instance.new("TextButton", TopBar)
-ToggleButton.Size = UDim2.new(0, 30, 0, 30)
-ToggleButton.Position = UDim2.new(1, -35, 0, 2)
-ToggleButton.Text = "X"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-ToggleButton.TextColor3 = Color3.new(1, 1, 1)
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextSize = 16
-Instance.new("UICorner", ToggleButton)
+local Right = Instance.new("Frame")
+Right.Size = UDim2.new(0.6, -10, 1, -50)
+Right.Position = UDim2.new(0.4, 5, 0, 45)
+Right.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Right.Parent = MainFrame
 
---// DISCORD COPY BUTTON
-local DiscordButton = Instance.new("TextButton", MainFrame)
-DiscordButton.Size = UDim2.new(1, -20, 0, 40)
-DiscordButton.Position = UDim2.new(0, 10, 0, 50)
-DiscordButton.Text = "Click to Copy Discord: discord.gg/YOURSERVER"
-DiscordButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-DiscordButton.TextColor3 = Color3.fromRGB(0, 200, 255)
-DiscordButton.Font = Enum.Font.GothamBold
-DiscordButton.TextSize = 15
-Instance.new("UICorner", DiscordButton)
+local LogScroll = Instance.new("ScrollingFrame")
+LogScroll.Size = UDim2.new(1, -10, 0.45, -10)
+LogScroll.Position = UDim2.new(0, 5, 0.55, 5)
+LogScroll.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+LogScroll.CanvasSize = UDim2.new(0, 0, 5, 0)
+LogScroll.Parent = Right
 
---// AUTO-JOIN BUTTON
-local AutoJoin = Instance.new("TextButton", MainFrame)
-AutoJoin.Size = UDim2.new(1, -20, 0, 40)
-AutoJoin.Position = UDim2.new(0, 10, 0, 100)
-AutoJoin.Text = "Auto-Join"
-AutoJoin.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-AutoJoin.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoJoin.Font = Enum.Font.GothamBold
-AutoJoin.TextSize = 15
-Instance.new("UICorner", AutoJoin)
+local AutoJoinBtn = Instance.new("TextButton")
+AutoJoinBtn.Size = UDim2.new(1, -20, 0, 50)
+AutoJoinBtn.Position = UDim2.new(0, 10, 0, 10)
+AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
+AutoJoinBtn.Text = "Auto Join: OFF"
+AutoJoinBtn.TextScaled = true
+AutoJoinBtn.Font = Enum.Font.GothamBlack
+AutoJoinBtn.TextColor3 = Color3.new(1, 1, 1)
+AutoJoinBtn.Parent = Left
 
---// STATE VARIABLES
-local isCollapsed = false
-local fullSize = MainFrame.Size
-local collapsedSize = UDim2.new(fullSize.X.Scale, fullSize.X.Offset, 0, 45)
-
-local autoJoinRunning = false
-
-----------------------------------------------------
---// COPY DISCORD
-----------------------------------------------------
-DiscordButton.MouseButton1Click:Connect(function()
-    setclipboard("https://discord.gg/YOURSERVER")
-    DiscordButton.Text = "Copied!"
-    task.wait(1)
-    DiscordButton.Text = "Click to Copy Discord: discord.gg/YOURSERVER"
-end)
-
-----------------------------------------------------
---// AUTO-JOIN TOGGLE
-----------------------------------------------------
-AutoJoin.MouseButton1Click:Connect(function()
-    autoJoinRunning = not autoJoinRunning
-
-    if autoJoinRunning then
-        AutoJoin.Text = "Working..."
-        AutoJoin.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-    else
-        AutoJoin.Text = "Auto-Join"
-        AutoJoin.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    end
-end)
-
-----------------------------------------------------
---// COLLAPSE / EXPAND
-----------------------------------------------------
-ToggleButton.MouseButton1Click:Connect(function()
-    if isCollapsed then
-        MainFrame:TweenSize(fullSize, "Out", "Quad", 0.25, true)
-    else
-        MainFrame:TweenSize(collapsedSize, "Out", "Quad", 0.25, true)
-    end
-    isCollapsed = not isCollapsed
-end)
-
-----------------------------------------------------
---// DRAGGING SYSTEM
-----------------------------------------------------
+-- DRAGGING
 local dragging = false
 local dragStart, startPos
 
-TopBar.InputBegan:Connect(function(input)
+Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
@@ -127,19 +88,61 @@ TopBar.InputBegan:Connect(function(input)
     end
 end)
 
-TopBar.InputEnded:Connect(function(input)
+Header.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = false
     end
 end)
 
-UIS.InputChanged:Connect(function(input)
+UserInputService.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
         )
     end
 end)
+
+-- DISCORD COPY FIXED
+DiscordBtn.MouseButton1Click:Connect(function()
+    setclipboard("https://discord.gg/brainrot") -- your link
+    DiscordBtn.Text = "Copied!"
+    task.wait(1)
+    DiscordBtn.Text = "Click to Copy Discord"
+end)
+
+-- AUTOJOIN TOGGLE
+local autoJoin = false
+AutoJoinBtn.MouseButton1Click:Connect(function()
+    autoJoin = not autoJoin
+    AutoJoinBtn.Text = autoJoin and "Auto Join: WORKING" or "Auto Join: OFF"
+end)
+
+-- ⭐⭐⭐  FIXED COLLAPSE SYSTEM  ⭐⭐⭐
+local isExpanded = true
+local HeaderHeight = 40
+
+CollapseBtn.MouseButton1Click:Connect(function()
+    if isExpanded then
+        isExpanded = false
+
+        Left.Visible = false
+        Right.Visible = false
+        LogScroll.Visible = false
+
+        MainFrame:TweenSize(UDim2.new(0, 720, 0, HeaderHeight), "Out", "Quad", 0.25)
+    else
+        isExpanded = true
+
+        Left.Visible = true
+        Right.Visible = true
+        LogScroll.Visible = true
+
+        MainFrame:TweenSize(UDim2.new(0,720,0,480),"Out","Quad",0.25)
+    end
+end)
+
 
