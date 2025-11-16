@@ -1,14 +1,17 @@
 --[[
-    Nick and Scrap's Auto Jointer (Aesthetic UI) - FINAL VERSION
+    Nick and Scrap's Auto Jointer (Aesthetic UI) - FINAL VERSION V2
     
-    -- Discord link is now a clickable button that simulates copying the link.
-    -- The mock rare item log has been updated to use the term "Brainrot."
-    -- The Minimum/sec (MS) input is automatically multiplied by 1,000,000 (Millions).
+    -- Auto Join is now a functional START/STOP toggle loop.
+    -- Discord link visibility maximized (still aesthetic "copy" due to Roblox security).
+    -- Minimum/sec (MS) input automatically scales by 1,000,000.
 ]]
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
+local RunService = game:GetService("RunService")
+local isScanning = false -- State variable for the Auto Join toggle
+local scanConnection = nil -- Connection for the scanning loop
 
 -- Main ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
@@ -51,7 +54,7 @@ local function updateRainbow()
     local hue = tick() % 10 / 10
     RainbowBorder.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
 end
-game:GetService("RunService").RenderStepped:Connect(updateRainbow)
+RunService.RenderStepped:Connect(updateRainbow)
 
 
 -- Header Bar
@@ -65,7 +68,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
 -- Title 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -150, 0, 25)
+Title.Size = UDim2.new(0.5, 0, 0, 25)
 Title.Position = UDim2.new(0, 20, 0, 5)
 Title.BackgroundTransparency = 1
 Title.Text = "Nick and Scrap's Auto Jointer"
@@ -78,20 +81,20 @@ Title.ZIndex = 3
 
 -- HIGH VISIBILITY CLICKABLE DISCORD LINK
 local DiscordBtn = Instance.new("TextButton")
-DiscordBtn.Size = UDim2.new(0, 200, 0, 15)
-DiscordBtn.Position = UDim2.new(0, 20, 0, 25)
+DiscordBtn.Size = UDim2.new(0, 270, 0, 18) -- Increased size
+DiscordBtn.Position = UDim2.new(0.5, 10, 0.5, -9) -- Repositioned to the right of the title
 DiscordBtn.BackgroundTransparency = 1
-DiscordBtn.Text = "Discord: discord.gg/pAgSFBKj (Click to Copy)"
+DiscordBtn.Text = "DISCORD: discord.gg/pAgSFBKj (Click to Copy)"
 DiscordBtn.Font = Enum.Font.GothamBold 
-DiscordBtn.TextSize = 13 
-DiscordBtn.TextColor3 = Color3.fromRGB(80, 255, 130) 
+DiscordBtn.TextSize = 14 -- Slightly larger text
+DiscordBtn.TextColor3 = Color3.fromRGB(255, 150, 255) -- Bright new color for visibility
 DiscordBtn.TextXAlignment = Enum.TextXAlignment.Left
 DiscordBtn.Parent = Header
 DiscordBtn.ZIndex = 3 
 
 local originalDiscordColor = DiscordBtn.TextColor3
 DiscordBtn.MouseButton1Click:Connect(function()
-    addLog("[DISCORD] Link copied to clipboard (Aesthetic Only).")
+    addLog("[DISCORD] Link copied to clipboard (Aesthetic/Simulated).")
     -- Simulate click feedback
     DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     task.wait(0.1)
@@ -99,7 +102,7 @@ DiscordBtn.MouseButton1Click:Connect(function()
 end)
 
 
--- Collapse/Expand Button 
+-- Collapse/Expand Button (The red 'X' button)
 local isExpanded = true
 local HeaderHeight = 45 
 local MinHeight = UDim2.new(0, 720, 0, HeaderHeight) 
@@ -212,6 +215,7 @@ AutoJoinBtn.Font = Enum.Font.GothamBold
 AutoJoinBtn.TextSize = 16
 AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(40, 210, 120)
 local DefaultScanColor = AutoJoinBtn.BackgroundColor3
+local WorkingColor = Color3.fromRGB(255, 190, 70)
 AutoJoinBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
 AutoJoinBtn.Position = UDim2.new(0, 15, 0, 50) 
 AutoJoinBtn.Size = UDim2.new(1, -30, 0, 40)
@@ -255,7 +259,7 @@ local function createInput(labelText, defaultText, yPos)
 end
 
 -- Feature 3: Minimum/sec (MS)
-local MinMSBox = createInput("Minimum/sec (MS)", "10", 170) -- Defaulting to "10" (represents 10 Million)
+local MinMSBox = createInput("Minimum/sec (MS)", "10", 170) 
 
 
 -- Status Label 
@@ -325,15 +329,10 @@ LogBox.Parent = LogScroll
 LogBox.ZIndex = 4 
 
 
--- Fake Auto Join Behavior (Simulates filtering and joining)
-AutoJoinBtn.MouseButton1Click:Connect(function()
-    if Status.Text == "Status: Working..." then return end
-    
-    LogBox.Text = "" 
-    AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(255, 190, 70) 
-    AutoJoinBtn.Text = "Working" 
-    Status.Text = "Status: Working..."
-    
+-- SIMULATED AUTO JOIN LOOP FUNCTION
+local function autoJoinLoop()
+    if not isScanning then return end
+
     -- READ INPUT AND MULTIPLY BY 1,000,000 (MILLION)
     local rawInput = tonumber(MinMSBox.Text) or 0
     local minRequired = rawInput * 1000000 
@@ -341,13 +340,13 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
     -- MOCK DATA (5 Million joins/sec)
     local foundServerValue = 5000000 
     local foundServerID = "79afcaad-2057-4e00-8a81-b741cef3f6ad"
-    local rarestItemName = "Mega-Brainrot Gem" -- Updated to "Brainrot" terminology
+    local rarestItemName = "Mega-Brainrot Gem" 
     local rarestItemValue = 999999999999999999
 
-    addLog("Started Auto Join with minimum: " .. string.format("%,d", minRequired) .. " MS")
-    task.wait(1)
     addLog("Querying servers...")
-    task.wait(1)
+    task.wait(1.5)
+
+    if not isScanning then return end -- Check stop state after waiting
 
     -- CHECK AGAINST MINIMUM
     if foundServerValue >= minRequired then
@@ -357,18 +356,57 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
         addLog("  - Value: $" .. string.format("%,d", rarestItemValue))
         addLog("  - Server Value: " .. string.format("%,d", foundServerValue) .. " (Filter PASS)")
         addLog("  - Teleport initiated (Aesthetic Only) to ID: " .. foundServerID)
-        task.wait(1.5)
+        
+        -- Stop scanning after a successful simulated join
+        isScanning = false
+        AutoJoinBtn.BackgroundColor3 = DefaultScanColor 
+        AutoJoinBtn.Text = "Auto Join"
+        Status.Text = "Status: Join Success!"
     else
         -- MOCK REJECTION
         addLog("[FILTER] Server rejected.")
         addLog("  - Found Value: " .. string.format("%,d", foundServerValue) .. " MS")
         addLog("  - Minimum Required: " .. string.format("%,d", minRequired) .. " MS")
         task.wait(1)
+        
+        if not isScanning then return end
+        
+        -- Continue scanning
+        addLog("Continuing scan...")
+        task.wait(1)
     end
-    
-    AutoJoinBtn.BackgroundColor3 = DefaultScanColor 
-    AutoJoinBtn.Text = "Auto Join"
-    addLog("Auto Join Cycle Complete (UI Only)")
-    Status.Text = "Status: Finished"
-end)
 
+    if isScanning then
+        -- Schedule the next scan cycle
+        task.spawn(autoJoinLoop)
+    else
+        addLog("Auto Join Cycle Complete (UI Only)")
+    end
+end
+
+-- AUTO JOIN START/STOP TOGGLE
+AutoJoinBtn.MouseButton1Click:Connect(function()
+    if isScanning then
+        -- STOP SCANNING
+        isScanning = false
+        if scanConnection then
+            scanConnection:Disconnect()
+            scanConnection = nil
+        end
+        AutoJoinBtn.BackgroundColor3 = DefaultScanColor 
+        AutoJoinBtn.Text = "Auto Join"
+        Status.Text = "Status: Idle (Stopped)"
+        addLog("--- Auto Join Stopped ---")
+    else
+        -- START SCANNING
+        isScanning = true
+        LogBox.Text = "" 
+        AutoJoinBtn.BackgroundColor3 = WorkingColor
+        AutoJoinBtn.Text = "Working" 
+        Status.Text = "Status: Working..."
+        addLog("--- Auto Join Started ---")
+        
+        -- Start the loop
+        scanConnection = task.spawn(autoJoinLoop)
+    end
+end)
