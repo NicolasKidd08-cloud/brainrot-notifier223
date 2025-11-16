@@ -2,6 +2,10 @@
 -- Discord link is now a clickable button that simulates copying the link.
 -- The mock rare item log has been updated to use the term "Brainrot."
 -- The Minimum/sec (MS) input is automatically multiplied by 1,000,000 (Millions).
+-- ALTERATIONS:
+-- 1. Auto Join Button is now a toggle (Start/Stop).
+-- 2. Discord Link is highly visible in the center of the Header.
+-- 3. Collapse/Expand button logic has been fixed.
 ]]
 
 local Players = game:GetService("Players")
@@ -62,7 +66,7 @@ Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
 -- Title
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -150, 0, 25)
+Title.Size = UDim2.new(0, 200, 0, 25) -- Adjusted size to make room for Discord link
 Title.Position = UDim2.new(0, 20, 0, 5)
 Title.BackgroundTransparency = 1
 Title.Text = "Nick and Scrap's Auto Jointer"
@@ -73,29 +77,43 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 Title.ZIndex = 3
 
--- HIGH VISIBILITY CLICKABLE DISCORD LINK
+-- 2. HIGH VISIBILITY CLICKABLE DISCORD LINK (Center of Header)
 local DiscordBtn = Instance.new("TextButton")
-DiscordBtn.Size = UDim2.new(0, 200, 0, 15)
-DiscordBtn.Position = UDim2.new(0, 20, 0, 25)
+DiscordBtn.Name = "VisibleDiscordButton"
+DiscordBtn.Size = UDim2.new(0, 300, 1, 0)
+DiscordBtn.Position = UDim2.new(0.5, -150, 0, 0) -- Centered position
 DiscordBtn.BackgroundTransparency = 1
-DiscordBtn.Text = "Discord: discord.gg/pAgSFBKj (Click to Copy)"
+DiscordBtn.Text = "DISCORD: discord.gg/pAgSFBKj (CLICK TO COPY)" -- Highly visible text
 DiscordBtn.Font = Enum.Font.GothamBold
-DiscordBtn.TextSize = 13
-DiscordBtn.TextColor3 = Color3.fromRGB(80, 255, 130)
-DiscordBtn.TextXAlignment = Enum.TextXAlignment.Left
+DiscordBtn.TextSize = 16 -- Increased size
+DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255) -- White for visibility
+DiscordBtn.TextXAlignment = Enum.TextXAlignment.Center
 DiscordBtn.Parent = Header
-DiscordBtn.ZIndex = 3
+DiscordBtn.ZIndex = 4
 
 local originalDiscordColor = DiscordBtn.TextColor3
 
 DiscordBtn.MouseButton1Click:Connect(function()
     addLog("[DISCORD] Link copied to clipboard (Aesthetic Only).")
-    DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DiscordBtn.TextColor3 = Color3.fromRGB(80, 255, 130) -- Flash green on click
     task.wait(0.1)
     DiscordBtn.TextColor3 = originalDiscordColor
 end)
 
--- Collapse/Expand Button
+-- Discord link for log
+local DiscordLinkLog = Instance.new("TextLabel")
+DiscordLinkLog.Size = UDim2.new(0, 200, 0, 15)
+DiscordLinkLog.Position = UDim2.new(0, 20, 0, 25)
+DiscordLinkLog.BackgroundTransparency = 1
+DiscordLinkLog.Text = "Discord: discord.gg/pAgSFBKj"
+DiscordLinkLog.Font = Enum.Font.GothamBold
+DiscordLinkLog.TextSize = 13
+DiscordLinkLog.TextColor3 = Color3.fromRGB(80, 255, 130)
+DiscordLinkLog.TextXAlignment = Enum.TextXAlignment.Left
+DiscordLinkLog.Parent = Header
+DiscordLinkLog.ZIndex = 3
+
+-- 3. Collapse/Expand Button (FIXED)
 local isExpanded = true
 local HeaderHeight = 45
 local MinHeight = UDim2.new(0, 720, 0, HeaderHeight)
@@ -116,26 +134,44 @@ CollapseBtn.ZIndex = 3
 Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1, 0)
 
 CollapseBtn.MouseButton1Click:Connect(function()
-    local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - HeaderHeight) / 2
+    local currentSize = MainFrame.Size
+    local targetSize, targetPos, targetBorder, targetBorderPos
 
     if isExpanded then
-        MainFrame:TweenSize(MinHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        RainbowBorder:TweenSize(MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        isExpanded = false
+        -- Collapse
+        targetSize = MinHeight
+        -- The position needs to shift up by half the difference in size to keep the top edge in place
+        local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - HeaderHeight) / 2
+        targetPos = FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT)
+        
+        targetBorder = MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2)
+        targetBorderPos = FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT)
+        
+        -- Hide the content frames
+        Left.Visible = false
+        Right.Visible = false
+        
     else
-        MainFrame:TweenSize(MaxHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        MainFrame:TweenPosition(FRAME_POS, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        RainbowBorder:TweenSize(MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        isExpanded = true
+        -- Expand
+        targetSize = MaxHeight
+        targetPos = FRAME_POS
+        
+        targetBorder = MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2)
+        targetBorderPos = FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS)
+        
+        -- Show the content frames
+        Left.Visible = true
+        Right.Visible = true
     end
+
+    MainFrame:TweenSize(targetSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+    MainFrame:TweenPosition(targetPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+    RainbowBorder:TweenSize(targetBorder, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+    RainbowBorder:TweenPosition(targetBorderPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+
+    isExpanded = not isExpanded
 end)
+
 
 -- Left Panel
 local Left = Instance.new("Frame")
@@ -205,13 +241,14 @@ local function createFeatureToggle(text, yPos)
     return Btn
 end
 
--- Auto Join Button
+-- 1. Auto Join Button (TOGGLE LOGIC)
 local AutoJoinBtn = Instance.new("TextButton")
 AutoJoinBtn.Text = "Auto Join"
 AutoJoinBtn.Font = Enum.Font.GothamBold
 AutoJoinBtn.TextSize = 16
 AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(40, 210, 120)
 local DefaultScanColor = AutoJoinBtn.BackgroundColor3
+local WorkingColor = Color3.fromRGB(255, 190, 70)
 AutoJoinBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
 AutoJoinBtn.Position = UDim2.new(0, 15, 0, 50)
 AutoJoinBtn.Size = UDim2.new(1, -30, 0, 40)
@@ -220,6 +257,74 @@ AutoJoinBtn.Parent = Left
 AutoJoinBtn.ZIndex = 3
 
 Instance.new("UICorner", AutoJoinBtn).CornerRadius = UDim.new(0, 8)
+
+local isAutoJoining = false
+
+AutoJoinBtn.MouseButton1Click:Connect(function()
+    isAutoJoining = not isAutoJoining
+    
+    if isAutoJoining then
+        -- Start working state
+        AutoJoinBtn.BackgroundColor3 = WorkingColor
+        AutoJoinBtn.Text = "Working"
+        Status.Text = "Status: Working..."
+        addLog("[AJ] Auto Join cycle started.")
+        
+        -- Start Aesthetic Mock Logic
+        -- NOTE: In a real script, you would start your main auto-join loop/thread here
+        
+        local rawInput = tonumber(MinMSBox.Text) or 0
+        local minRequired = rawInput * 1000000
+        
+        task.spawn(function()
+            if not isAutoJoining then return end -- Check if it was stopped immediately
+            
+            addLog("Started Auto Join with minimum: " .. string.format("%,d", minRequired) .. " MS")
+            task.wait(1)
+            
+            if not isAutoJoining then return end
+            addLog("Querying servers...")
+            task.wait(1)
+            
+            -- Aesthetic Simulation Result
+            if isAutoJoining then
+                local foundServerValue = 5000000
+                local rarestItemName = "Mega-Brainrot Gem"
+                local rarestItemValue = 999999999999999999
+
+                if foundServerValue >= minRequired then
+                    addLog("[SUCCESS] High-value server found!")
+                    addLog(" - Rarest Brainrot: " .. rarestItemName)
+                    addLog(" - Value: $" .. string.format("%,d", rarestItemValue))
+                    addLog(" - Server Value: " .. string.format("%,d", foundServerValue) .. " (Filter PASS)")
+                    addLog(" - Teleport initiated (Aesthetic Only)...")
+                else
+                    addLog("[FILTER] Server rejected.")
+                    addLog(" - Found Value: " .. string.format("%,d", foundServerValue) .. " MS")
+                    addLog(" - Minimum Required: " .. string.format("%,d", minRequired) .. " MS")
+                end
+                
+                -- Wait a bit, then reset back to stopped state if it wasn't manually stopped
+                task.wait(1.5)
+                if isAutoJoining then
+                    isAutoJoining = false
+                    AutoJoinBtn.BackgroundColor3 = DefaultScanColor
+                    AutoJoinBtn.Text = "Auto Join"
+                    addLog("Auto Join Cycle Complete (UI Only)")
+                    Status.Text = "Status: Finished"
+                end
+            end
+        end)
+        
+    else
+        -- Stop working state
+        AutoJoinBtn.BackgroundColor3 = DefaultScanColor
+        AutoJoinBtn.Text = "Auto Join"
+        Status.Text = "Status: Stopped"
+        addLog("[AJ] Auto Join cycle stopped manually.")
+        -- NOTE: In a real script, you would stop your main auto-join loop/thread here
+    end
+end)
 
 -- Persistent Rejoin Toggle
 local PersistentRejoinBtn = createFeatureToggle("Persistent Rejoin", 100)
@@ -320,51 +425,4 @@ LogBox.TextYAlignment = Enum.TextYAlignment.Top
 LogBox.AutomaticSize = Enum.AutomaticSize.Y
 LogBox.Parent = LogScroll
 LogBox.ZIndex = 4
-
--- Fake Auto Join Logic (Aesthetic Only)
-AutoJoinBtn.MouseButton1Click:Connect(function()
-    if Status.Text == "Status: Working..." then return end
-
-    LogBox.Text = ""
-    AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(255, 190, 70)
-    AutoJoinBtn.Text = "Working"
-
-    Status.Text = "Status: Working..."
-
-    local rawInput = tonumber(MinMSBox.Text) or 0
-    local minRequired = rawInput * 1000000
-
-    local foundServerValue = 5000000
-    local foundServerID = "79afcaad-2057-4e00-8a81-b741cef3f6ad"
-    local rarestItemName = "Mega-Brainrot Gem"
-    local rarestItemValue = 999999999999999999
-
-    addLog("Started Auto Join with minimum: " .. string.format("%,d", minRequired) .. " MS")
-    task.wait(1)
-    addLog("Querying servers...")
-    task.wait(1)
-
-    if foundServerValue >= minRequired then
-        addLog("[SUCCESS] High-value server found!")
-        addLog(" - Rarest Brainrot: " .. rarestItemName)
-        addLog(" - Value: $" .. string.format("%,d", rarestItemValue))
-        addLog(" - Server Value: " .. string.format("%,d", foundServerValue) .. " (Filter PASS)")
-        addLog(" - Teleport initiated (Aesthetic Only) to ID: " .. foundServerID)
-
-        task.wait(1.5)
-    else
-        addLog("[FILTER] Server rejected.")
-        addLog(" - Found Value: " .. string.format("%,d", foundServerValue) .. " MS")
-        addLog(" - Minimum Required: " .. string.format("%,d", minRequired) .. " MS")
-        task.wait(1)
-    end
-
-    AutoJoinBtn.BackgroundColor3 = DefaultScanColor
-    AutoJoinBtn.Text = "Auto Join"
-    addLog("Auto Join Cycle Complete (UI Only)")
-    Status.Text = "Status: Finished"
-end)
-
-addLog("UI loaded. Click Discord to copy, Auto Join to toggle, drag header to move, X to collapse.")
-
 
