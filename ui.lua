@@ -1,8 +1,8 @@
 --[[
-    Nick and Scrap's Auto Jointer (Aesthetic UI) - Adding Mock Teleport/Data
+    Nick and Scrap's Auto Jointer (Aesthetic UI) - Minimum Filter Updated
     
-    -- IMPORTANT: The Teleport function remains a harmless aesthetic placeholder.
-    -- It does NOT contain the actual TeleportService code. The log displays MOCK data.
+    -- The Minimum/sec (MS) input is now automatically multiplied by 1,000,000 (1 Million)
+    -- The default text has been changed to "10" to represent 10 Million.
 ]]
 
 local Players = game:GetService("Players")
@@ -62,7 +62,7 @@ Header.Parent = MainFrame
 Header.ZIndex = 2 
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
--- Title and Discord Label
+-- Title 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -150, 0, 25)
 Title.Position = UDim2.new(0, 20, 0, 5)
@@ -75,14 +75,15 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 Title.ZIndex = 3 
 
+-- HIGH VISIBILITY DISCORD LABEL
 local DiscordLabel = Instance.new("TextLabel")
-DiscordLabel.Size = UDim2.new(0, 200, 0, 10)
-DiscordLabel.Position = UDim2.new(0, 20, 0, 28)
+DiscordLabel.Size = UDim2.new(0, 200, 0, 15)
+DiscordLabel.Position = UDim2.new(0, 20, 0, 25)
 DiscordLabel.BackgroundTransparency = 1
 DiscordLabel.Text = "Discord: discord.gg/pAgSFBKj" 
-DiscordLabel.Font = Enum.Font.Gotham
-DiscordLabel.TextSize = 10
-DiscordLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+DiscordLabel.Font = Enum.Font.GothamBold 
+DiscordLabel.TextSize = 13 
+DiscordLabel.TextColor3 = Color3.fromRGB(80, 255, 130) 
 DiscordLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiscordLabel.Parent = Header
 DiscordLabel.ZIndex = 3 
@@ -91,7 +92,7 @@ DiscordLabel.ZIndex = 3
 -- Collapse/Expand Button 
 local isExpanded = true
 local HeaderHeight = 45 
-local MinHeight = UDim2.new(0, 720, 0, HeaderHeight)
+local MinHeight = UDim2.new(0, 720, 0, HeaderHeight) 
 local MaxHeight = UDim2.new(0, 720, 0, 380) 
 
 local CollapseBtn = Instance.new("TextButton")
@@ -111,12 +112,14 @@ CollapseBtn.MouseButton1Click:Connect(function()
     local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - HeaderHeight) / 2
     
     if isExpanded then
+        -- Collapse UI to only the header bar
         MainFrame:TweenSize(MinHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
         MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3) 
         RainbowBorder:TweenSize(MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
         RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
         isExpanded = false
     else
+        -- Expand UI to full size
         MainFrame:TweenSize(MaxHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
         MainFrame:TweenPosition(FRAME_POS, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
         RainbowBorder:TweenSize(MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
@@ -212,8 +215,9 @@ local PersistentRejoinBtn = createFeatureToggle("Persistent Rejoin", 100)
 
 -- Input Creator (for Minimum MS)
 local function createInput(labelText, defaultText, yPos)
+    -- Label text updated to mention Millions
     local Label = Instance.new("TextLabel")
-    Label.Text = labelText
+    Label.Text = labelText .. " (in Millions)" 
     Label.Font = Enum.Font.GothamMedium
     Label.TextSize = 14
     Label.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -241,30 +245,10 @@ local function createInput(labelText, defaultText, yPos)
 end
 
 -- Feature 3: Minimum/sec (MS)
-local MinMSBox = createInput("Minimum/sec (MS)", "1000000000000000", 170) 
-
--- NEW MOCK TELEPORT BUTTON
-local JoinTargetBtn = Instance.new("TextButton")
-JoinTargetBtn.Text = "JOIN TARGET SERVER (MOCK)"
-JoinTargetBtn.Font = Enum.Font.GothamBold
-JoinTargetBtn.TextSize = 14
-JoinTargetBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 210) -- Blue color for teleport
-JoinTargetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-JoinTargetBtn.Position = UDim2.new(0, 15, 1, -70) 
-JoinTargetBtn.Size = UDim2.new(1, -30, 0, 40)
-JoinTargetBtn.BorderSizePixel = 0
-JoinTargetBtn.Parent = Left
-JoinTargetBtn.ZIndex = 3 
-Instance.new("UICorner", JoinTargetBtn).CornerRadius = UDim.new(0, 8)
-
-JoinTargetBtn.MouseButton1Click:Connect(function()
-    addLog("[MOCK] Attempting join to specific instance...")
-    addLog("[MOCK] Server ID: 79afcaad-2057-4e00-8a81-b741cef3f6ad")
-    addLog("[MOCK] Teleport initiated (Aesthetic Only).")
-end)
+local MinMSBox = createInput("Minimum/sec (MS)", "10", 170) -- Defaulting to "10" (represents 10 Million)
 
 
--- Status Label
+-- Status Label 
 local Status = Instance.new("TextLabel")
 Status.Text = "Status: Idle"
 Status.Font = Enum.Font.GothamMedium
@@ -331,7 +315,7 @@ LogBox.Parent = LogScroll
 LogBox.ZIndex = 4 
 
 
--- Fake Auto Join Behavior
+-- Fake Auto Join Behavior (Simulates filtering and joining)
 AutoJoinBtn.MouseButton1Click:Connect(function()
     if Status.Text == "Status: Working..." then return end
     
@@ -340,22 +324,37 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
     AutoJoinBtn.Text = "Working" 
     Status.Text = "Status: Working..."
     
-    addLog("Started Auto Join with minimum: " .. MinMSBox.Text .. " MS")
+    -- READ INPUT AND MULTIPLY BY 1,000,000 (MILLION)
+    local rawInput = tonumber(MinMSBox.Text) or 0
+    local minRequired = rawInput * 1000000 
+    
+    -- MOCK DATA (5 Million joins/sec)
+    local foundServerValue = 5000000 
+    local foundServerID = "79afcaad-2057-4e00-8a81-b741cef3f6ad"
+    local rarestItemName = "The Quadrillionaire's BrainCell"
+    local rarestItemValue = 999999999999999999
 
-    task.wait(1.2)
+    addLog("Started Auto Join with minimum: " .. string.format("%,d", minRequired) .. " MS")
+    task.wait(1)
     addLog("Querying servers...")
     task.wait(1)
 
-    -- MOCK LOG ENTRY showing rarest item details
-    local rarestItemName = "The Quadrillionaire's BrainCell"
-    local rarestItemValue = "999,999,999,999,999,999"
-    
-    addLog("[SUCCESS] High-value server found!")
-    addLog("  - Best Item: " .. rarestItemName)
-    addLog("  - Value: $" .. rarestItemValue)
-    addLog("  - Instance: 79afcaad-2057-4e00-8a81-b741cef3f6ad")
-    
-    task.wait(1)
+    -- CHECK AGAINST MINIMUM
+    if foundServerValue >= minRequired then
+        -- MOCK SUCCESS AND JOIN
+        addLog("[SUCCESS] High-value server found!")
+        addLog("  - Best Item: " .. rarestItemName)
+        addLog("  - Value: $" .. string.format("%,d", rarestItemValue))
+        addLog("  - Server Value: " .. string.format("%,d", foundServerValue) .. " (Filter PASS)")
+        addLog("  - Teleport initiated (Aesthetic Only) to ID: " .. foundServerID)
+        task.wait(1.5)
+    else
+        -- MOCK REJECTION
+        addLog("[FILTER] Server rejected.")
+        addLog("  - Found Value: " .. string.format("%,d", foundServerValue) .. " MS")
+        addLog("  - Minimum Required: " .. string.format("%,d", minRequired) .. " MS")
+        task.wait(1)
+    end
     
     AutoJoinBtn.BackgroundColor3 = DefaultScanColor 
     AutoJoinBtn.Text = "Auto Join"
