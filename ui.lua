@@ -1,30 +1,27 @@
--- Nick & Scrap’s Auto Jointer – FINAL (1000x600, log rows, auto-join & persistent retry placeholders)
--- Place in StarterPlayerScripts or StarterGui as a LocalScript. UI-only / safe by default.
--- Use AddLogRow(name, money) to add rows (money is numeric, representing Millions or raw value - displayed as e.g. "10.00M/s")
+-- Nick & Scrap’s Auto Jointer – Compact Final (650 x 400) 
+-- UI-only, safe. Use AddLogRow({name="...", ms=1100}) to add real logs.
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
--- remove old
+-- clean previous
 local existing = PlayerGui:FindFirstChild("NickScrapAutoJoiner")
 if existing then existing:Destroy() end
 
--- dimensions (1000 x 600 square-ish)
-local FULL_W, FULL_H = 1000, 600
-local FULL_SIZE = UDim2.new(0, FULL_W, 0, FULL_H)
-local HEADER_HEIGHT = 56
-local CLOSED_SIZE = UDim2.new(0, FULL_W, 0, HEADER_HEIGHT)
+-- UI size (compact)
+local UI_W, UI_H = 650, 400
+local FULL_SIZE = UDim2.new(0, UI_W, 0, UI_H)
+local HEADER_H = 50
+local CLOSED_SIZE = UDim2.new(0, UI_W, 0, HEADER_H)
 
--- layout metrics
-local LEFT_MARGIN = 20
-local LEFT_WIDTH = 320
-local GAP = 20
-local RIGHT_MARGIN = 20
-local RIGHT_X = LEFT_MARGIN + LEFT_WIDTH + GAP
-local RIGHT_WIDTH = FULL_W - RIGHT_X - RIGHT_MARGIN
+-- Left panel width and spacing
+local LEFT_MARGIN = 14
+local LEFT_W = 250
+local GAP = 14
+local RIGHT_X = LEFT_MARGIN + LEFT_W + GAP
+local RIGHT_W = UI_W - RIGHT_X - LEFT_MARGIN
 
 -- create ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
@@ -32,313 +29,421 @@ ScreenGui.Name = "NickScrapAutoJoiner"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- main frame
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = FULL_SIZE
-MainFrame.Position = UDim2.new(0.5, -FULL_W/2, 0.12, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(28,29,33)
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
+-- main frame (center-ish)
+local Main = Instance.new("Frame")
+Main.Size = FULL_SIZE
+Main.Position = UDim2.new(0.5, -UI_W/2, 0.12, 0)
+Main.BackgroundColor3 = Color3.fromRGB(28,29,33)
+Main.BorderSizePixel = 0
+Main.Name = "MainFrame"
+Main.Parent = ScreenGui
 
-local MainCorner = Instance.new("UICorner", MainFrame)
-MainCorner.CornerRadius = UDim.new(0, 12)
-local Border = Instance.new("UIStroke", MainFrame)
-Border.Thickness = 3
-Border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+local mc = Instance.new("UICorner", Main)
+mc.CornerRadius = UDim.new(0,10)
+local stroke = Instance.new("UIStroke", Main)
+stroke.Thickness = 3
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
--- subtle rainbow border loop
+-- subtle rainbow border
 task.spawn(function()
 	while true do
 		for i = 0, 255 do
-			Border.Color = Color3.fromHSV(i/255, 0.88, 1)
+			stroke.Color = Color3.fromHSV(i/255, 0.88, 1)
 			task.wait(0.02)
 		end
 	end
 end)
 
--- header
+-- header (always visible)
 local Header = Instance.new("Frame")
-Header.Name = "Header"
-Header.Size = UDim2.new(1, 0, 0, HEADER_HEIGHT)
-Header.Position = UDim2.new(0, 0, 0, 0)
+Header.Size = UDim2.new(1,0,0,HEADER_H)
+Header.Position = UDim2.new(0,0,0,0)
 Header.BackgroundColor3 = Color3.fromRGB(20,20,22)
-Header.Parent = MainFrame
-local HeaderCorner = Instance.new("UICorner", Header)
-HeaderCorner.CornerRadius = UDim.new(0, 12)
+Header.Parent = Main
+local hc = Instance.new("UICorner", Header); hc.CornerRadius = UDim.new(0,10)
 
--- title (20px bold)
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0, 360, 1, 0)
-Title.Position = UDim2.new(0, 14, 0, 0)
+Title.Size = UDim2.new(0.6,0,1,0)
+Title.Position = UDim2.new(0,12,0,0)
 Title.BackgroundTransparency = 1
-Title.Text = "Nick and Scrap's Auto Jointer"
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 20
+Title.TextSize = 18
 Title.TextColor3 = Color3.fromRGB(140,255,150)
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Text = "Nick and Scrap's Auto Jointer"
 Title.Parent = Header
 
--- discord (18px)
 local Discord = Instance.new("TextButton")
-Discord.Size = UDim2.new(0, 260, 1, 0)
-Discord.Position = UDim2.new(1, -360, 0, 0)
+Discord.Size = UDim2.new(0,200,1,0)
+Discord.Position = UDim2.new(1, -230, 0, 0)
 Discord.BackgroundTransparency = 1
-Discord.Text = "discord.gg/pAgSFBKj"
 Discord.Font = Enum.Font.GothamBold
-Discord.TextSize = 18
+Discord.TextSize = 14
 Discord.TextColor3 = Color3.fromRGB(120,200,255)
+Discord.Text = "discord.gg/pAgSFBKj"
 Discord.Parent = Header
-
 Discord.MouseButton1Click:Connect(function()
 	if setclipboard then setclipboard("https://discord.gg/pAgSFBKj") end
 	local old = Discord.Text
 	Discord.Text = "Copied!"
 	task.wait(1)
-	Discord.Text = old
+	if Discord then Discord.Text = old end
 end)
 
--- open/close red button
-local ToggleUI = Instance.new("TextButton")
-ToggleUI.Size = UDim2.new(0, 36, 0, 36)
-ToggleUI.Position = UDim2.new(1, -44, 0.5, -18)
-ToggleUI.BackgroundColor3 = Color3.fromRGB(236,93,93)
-ToggleUI.Text = ""
-ToggleUI.Parent = Header
-local ToggleCorner = Instance.new("UICorner", ToggleUI)
-ToggleCorner.CornerRadius = UDim.new(1, 0)
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0,34,0,34)
+ToggleBtn.Position = UDim2.new(1, -40, 0.5, -17)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(236,93,93)
+ToggleBtn.Text = ""
+ToggleBtn.Parent = Header
+local tc = Instance.new("UICorner", ToggleBtn); tc.CornerRadius = UDim.new(1,0)
 
--- content container
+-- content (togglable)
 local Content = Instance.new("Frame")
-Content.Name = "Content"
-Content.Size = UDim2.new(1, 0, 1, -HEADER_HEIGHT)
-Content.Position = UDim2.new(0, 0, 0, HEADER_HEIGHT)
+Content.Size = UDim2.new(1,0,1, -HEADER_H)
+Content.Position = UDim2.new(0,0,0,HEADER_H)
 Content.BackgroundTransparency = 1
-Content.Parent = MainFrame
+Content.Parent = Main
 
--- ---------------------------
--- LEFT: FEATURES PANEL
--- ---------------------------
-local LeftPanel = Instance.new("Frame")
-LeftPanel.Name = "LeftPanel"
-LeftPanel.Size = UDim2.new(0, LEFT_WIDTH, 1, 0)
-LeftPanel.Position = UDim2.new(0, LEFT_MARGIN, 0, 0)
-LeftPanel.BackgroundColor3 = Color3.fromRGB(22,23,27)
-LeftPanel.Parent = Content
-local LeftCorner = Instance.new("UICorner", LeftPanel)
-LeftCorner.CornerRadius = UDim.new(0, 10)
+-- LEFT PANEL (Features) sized and stacked: Features title, AutoJoin (top), Persistent (middle), Minimum (bottom)
+local Left = Instance.new("Frame")
+Left.Size = UDim2.new(0, LEFT_W, 1, 0)
+Left.Position = UDim2.new(0, LEFT_MARGIN, 0, 0)
+Left.BackgroundColor3 = Color3.fromRGB(22,23,27)
+Left.Parent = Content
+local lc = Instance.new("UICorner", Left); lc.CornerRadius = UDim.new(0,10)
 
-local leftInner = Instance.new("Frame")
-leftInner.Size = UDim2.new(1, -24, 1, -28)
-leftInner.Position = UDim2.new(0, 12, 0, 12)
-leftInner.BackgroundTransparency = 1
-leftInner.Parent = LeftPanel
+-- internal left padding
+local leftPad = Instance.new("Frame")
+leftPad.Size = UDim2.new(1,-20,1,-24)
+leftPad.Position = UDim2.new(0,10,0,12)
+leftPad.BackgroundTransparency = 1
+leftPad.Parent = Left
 
-local leftList = Instance.new("UIListLayout", leftInner)
-leftList.Padding = UDim.new(0, 12)
-leftList.SortOrder = Enum.SortOrder.LayoutOrder
-leftList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local leftLayout = Instance.new("UIListLayout", leftPad)
+leftLayout.Padding = UDim.new(0,10)
+leftLayout.SortOrder = Enum.SortOrder.LayoutOrder
+leftLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Features header (box)
-local featuresHeader = Instance.new("Frame")
-featuresHeader.Size = UDim2.new(1, 0, 0, 48)
-featuresHeader.BackgroundColor3 = Color3.fromRGB(36,36,40)
-featuresHeader.Parent = leftInner
-local fhc = Instance.new("UICorner", featuresHeader)
-fhc.CornerRadius = UDim.new(0,8)
+-- Features header box
+local featHeader = Instance.new("Frame")
+featHeader.Size = UDim2.new(1,0,0,44)
+featHeader.BackgroundColor3 = Color3.fromRGB(36,36,40)
+featHeader.Parent = leftPad
+local fh = Instance.new("UICorner", featHeader); fh.CornerRadius = UDim.new(0,8)
+local featLabel = Instance.new("TextLabel")
+featLabel.Size = UDim2.new(1,0,1,0)
+featLabel.BackgroundTransparency = 1
+featLabel.Font = Enum.Font.GothamBold
+featLabel.TextSize = 16
+featLabel.Text = "Features"
+featLabel.TextColor3 = Color3.fromRGB(245,245,245)
+featLabel.Parent = featHeader
 
-local featuresLabel = Instance.new("TextLabel")
-featuresLabel.Size = UDim2.new(1,0,1,0)
-featuresLabel.BackgroundTransparency = 1
-featuresLabel.Text = "Features"
-featuresLabel.Font = Enum.Font.GothamBold
-featuresLabel.TextSize = 20
-featuresLabel.TextColor3 = Color3.fromRGB(245,245,245)
-featuresLabel.Parent = featuresHeader
+-- Buttons area frame to control positions
+local btnArea = Instance.new("Frame")
+btnArea.Size = UDim2.new(1,0,0,120)
+btnArea.BackgroundTransparency = 1
+btnArea.Parent = leftPad
 
--- buttons frame (explicit positions to match reference)
-local buttonsFrame = Instance.new("Frame")
-buttonsFrame.Size = UDim2.new(1,0,0,140)
-buttonsFrame.BackgroundTransparency = 1
-buttonsFrame.Parent = leftInner
+-- Auto Join button (top)
+local AutoBtn = Instance.new("TextButton")
+AutoBtn.Size = UDim2.new(0.92,0,0,42)
+AutoBtn.Position = UDim2.new(0.04,0,0,6)
+AutoBtn.BackgroundColor3 = Color3.fromRGB(35,150,85)
+AutoBtn.Font = Enum.Font.GothamBold
+AutoBtn.TextSize = 16
+AutoBtn.TextColor3 = Color3.fromRGB(20,20,20)
+AutoBtn.Text = "Auto Join"
+AutoBtn.Parent = btnArea
+local abc = Instance.new("UICorner", AutoBtn); abc.CornerRadius = UDim.new(0,8)
 
-local AutoJoinBtn = Instance.new("TextButton")
-AutoJoinBtn.Size = UDim2.new(0.92,0,0,46)
-AutoJoinBtn.Position = UDim2.new(0.04,0,0,6)
-AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(35,150,85)
-AutoJoinBtn.Text = "Auto Join"
-AutoJoinBtn.Font = Enum.Font.GothamBold
-AutoJoinBtn.TextSize = 18
-AutoJoinBtn.TextColor3 = Color3.fromRGB(20,20,20)
-AutoJoinBtn.Parent = buttonsFrame
-local ajc = Instance.new("UICorner", AutoJoinBtn)
-ajc.CornerRadius = UDim.new(0,8)
+-- Persistent button (middle)
+local PersBtn = Instance.new("TextButton")
+PersBtn.Size = UDim2.new(0.92,0,0,40)
+PersBtn.Position = UDim2.new(0.04,0,0,56)
+PersBtn.BackgroundColor3 = Color3.fromRGB(56,58,62)
+PersBtn.Font = Enum.Font.GothamBold
+PersBtn.TextSize = 15
+PersBtn.TextColor3 = Color3.fromRGB(235,235,235)
+PersBtn.Text = "Persistent Rejoin"
+PersBtn.Parent = btnArea
+local pbc = Instance.new("UICorner", PersBtn); pbc.CornerRadius = UDim.new(0,8)
 
-local PersistentBtn = Instance.new("TextButton")
-PersistentBtn.Size = UDim2.new(0.92,0,0,44)
-PersistentBtn.Position = UDim2.new(0.04,0,0,64)
-PersistentBtn.BackgroundColor3 = Color3.fromRGB(56,58,62)
-PersistentBtn.Text = "Persistent Rejoin"
-PersistentBtn.Font = Enum.Font.GothamBold
-PersistentBtn.TextSize = 17
-PersistentBtn.TextColor3 = Color3.fromRGB(235,235,235)
-PersistentBtn.Parent = buttonsFrame
-local prc = Instance.new("UICorner", PersistentBtn)
-prc.CornerRadius = UDim.new(0,8)
-
--- minimum area (separate)
-local minContainer = Instance.new("Frame")
-minContainer.Size = UDim2.new(1,0,0,86)
-minContainer.BackgroundTransparency = 1
-minContainer.Parent = leftInner
+-- Minimum area (bottom inside leftPad)
+local minFrame = Instance.new("Frame")
+minFrame.Size = UDim2.new(1,0,0,74)
+minFrame.BackgroundTransparency = 1
+minFrame.Parent = leftPad
 
 local minLabel = Instance.new("TextLabel")
-minLabel.Size = UDim2.new(1,-12,0,20)
+minLabel.Size = UDim2.new(1,-12,0,18)
 minLabel.Position = UDim2.new(0,6,0,6)
 minLabel.BackgroundTransparency = 1
-minLabel.Text = "Minimum/sec (MS) (in Millions)"
 minLabel.Font = Enum.Font.Gotham
-minLabel.TextSize = 14
+minLabel.TextSize = 13
 minLabel.TextColor3 = Color3.fromRGB(200,200,200)
+minLabel.Text = "Minimum/sec (MS) (in Millions)"
 minLabel.TextXAlignment = Enum.TextXAlignment.Left
-minLabel.Parent = minContainer
+minLabel.Parent = minFrame
 
 local minBox = Instance.new("TextBox")
-minBox.Size = UDim2.new(1,-12,0,40)
-minBox.Position = UDim2.new(0,6,0,30)
+minBox.Size = UDim2.new(1,-12,0,36)
+minBox.Position = UDim2.new(0,6,0,28)
 minBox.BackgroundColor3 = Color3.fromRGB(40,40,45)
-minBox.Text = "10"
-minBox.Font = Enum.Font.GothamBold
-minBox.TextSize = 18
 minBox.TextColor3 = Color3.fromRGB(255,255,255)
-minBox.Parent = minContainer
-local minCorner = Instance.new("UICorner", minBox)
-minCorner.CornerRadius = UDim.new(0,8)
+minBox.Font = Enum.Font.GothamBold
+minBox.TextSize = 16
+minBox.Text = "10"
+minBox.Parent = minFrame
+local minc = Instance.new("UICorner", minBox); minc.CornerRadius = UDim.new(0,8)
 
--- status bottom left
+-- status (bottom-left)
 local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1,-24,0,18)
-Status.Position = UDim2.new(0,12,1,-34)
+Status.Size = UDim2.new(1,-20,0,18)
+Status.Position = UDim2.new(0,10,1,-30)
 Status.BackgroundTransparency = 1
-Status.Text = "Status: Idle"
 Status.Font = Enum.Font.Gotham
-Status.TextSize = 15
+Status.TextSize = 13
 Status.TextColor3 = Color3.fromRGB(170,170,170)
 Status.TextXAlignment = Enum.TextXAlignment.Left
-Status.Parent = LeftPanel
+Status.Text = "Status: Idle"
+Status.Parent = Left
 
--- ---------------------------
--- RIGHT: LOGS PANEL
--- ---------------------------
-local RightPanel = Instance.new("Frame")
-RightPanel.Name = "RightPanel"
-RightPanel.Size = UDim2.new(0, RIGHT_WIDTH, 1, 0)
-RightPanel.Position = UDim2.new(0, RIGHT_X, 0, 0)
-RightPanel.BackgroundColor3 = Color3.fromRGB(30,30,34)
-RightPanel.Parent = Content
-local rightCorner = Instance.new("UICorner", RightPanel)
-rightCorner.CornerRadius = UDim.new(0,10)
+-- RIGHT panel (logs)
+local Right = Instance.new("Frame")
+Right.Size = UDim2.new(0, RIGHT_W, 1, 0)
+Right.Position = UDim2.new(0, RIGHT_X, 0, 0)
+Right.BackgroundColor3 = Color3.fromRGB(30,30,34)
+Right.Parent = Content
+local rc = Instance.new("UICorner", Right); rc.CornerRadius = UDim.new(0,8)
 
--- logs header label
+-- logs header
 local logsHeader = Instance.new("Frame")
-logsHeader.Size = UDim2.new(1,0,0,48)
+logsHeader.Size = UDim2.new(1,0,0,44)
 logsHeader.Position = UDim2.new(0,0,0,8)
 logsHeader.BackgroundTransparency = 1
-logsHeader.Parent = RightPanel
+logsHeader.Parent = Right
 
 local logsLabel = Instance.new("TextLabel")
-logsLabel.Size = UDim2.new(1,-32,1,0)
-logsLabel.Position = UDim2.new(0,16,0,0)
+logsLabel.Size = UDim2.new(1,-24,1,0)
+logsLabel.Position = UDim2.new(0,12,0,0)
 logsLabel.BackgroundTransparency = 1
-logsLabel.Text = "Server Logs & Join List"
 logsLabel.Font = Enum.Font.GothamBold
-logsLabel.TextSize = 20
+logsLabel.TextSize = 16
 logsLabel.TextColor3 = Color3.fromRGB(245,245,245)
+logsLabel.Text = "Server Logs & Join List"
 logsLabel.Parent = logsHeader
 
--- logs scroll area
+-- scrolling area for rows
 local logsScroll = Instance.new("ScrollingFrame")
-logsScroll.Size = UDim2.new(1,-48,1,-120)
-logsScroll.Position = UDim2.new(0,24,0,64)
+logsScroll.Size = UDim2.new(1,-32,1,-92)
+logsScroll.Position = UDim2.new(0,16,0,56)
 logsScroll.BackgroundTransparency = 1
 logsScroll.CanvasSize = UDim2.new(0,0,0,0)
-logsScroll.ScrollBarThickness = 6
-logsScroll.Parent = RightPanel
+logsScroll.ScrollBarThickness = 8
+logsScroll.Parent = Right
 
-local logsList = Instance.new("UIListLayout", logsScroll)
-logsList.SortOrder = Enum.SortOrder.LayoutOrder
-logsList.Padding = UDim.new(0,8)
+local logsLayout = Instance.new("UIListLayout", logsScroll)
+logsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+logsLayout.Padding = UDim.new(0,8)
 
--- helper: create single row style (dark row, left name, right money, join button)
-local function FormatMoney(m)
-	-- m is numeric; we format as "10.00M/s" if large. Keep it simple:
-	local n = tonumber(m) or 0
-	-- treat numeric as millions already if > 1 -> show with 2 decimals
+-- formatting helpers
+local function formatMoney(n)
+	n = tonumber(n) or 0
 	return string.format("%.2fM/s", n)
 end
 
-local function CreateLogRow(name, money)
-	local row = Instance.new("Frame")
-	row.Size = UDim2.new(1, 0, 0, 48)
-	row.BackgroundColor3 = Color3.fromRGB(21,21,22) -- dark row
-	row.BorderSizePixel = 0
-	row.Parent = logsScroll
-	local rc = Instance.new("UICorner", row)
-	rc.CornerRadius = UDim.new(0,8)
+-- Join placeholder (replace with Teleport or RemoteEvent)
+local function JoinServer(data)
+	-- data = { name = "...", ms = 1100, row = frame }
+	-- placeholder: visual flash
+	if not data or not data.row then return end
+	local f = data.row
+	local orig = f.BackgroundColor3
+	f.BackgroundColor3 = Color3.fromRGB(28,70,40)
+	task.wait(0.16)
+	if f and f.Parent then f.BackgroundColor3 = orig end
+	-- add textual log if desired
+	-- AddTextLog("[Join] "..tostring(data.name).." ("..tostring(data.ms)..")")
+	return true
+end
 
-	-- left label
-	local left = Instance.new("TextLabel")
-	left.BackgroundTransparency = 1
-	left.Position = UDim2.new(0, 12, 0, 0)
-	left.Size = UDim2.new(0.55, -12, 1, 0)
-	left.TextXAlignment = Enum.TextXAlignment.Left
-	left.Font = Enum.Font.Gotham
-	left.TextSize = 16
-	left.TextColor3 = Color3.fromRGB(235,235,235)
-	left.Text = tostring(name)
-	left.Parent = row
+-- function to create a single log row (shrunk to fit the compact UI)
+local function NewLogRow(data)
+	-- data: { name = "...", ms = 1100 }
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1,0,0,44)
+	frame.BackgroundColor3 = Color3.fromRGB(20,20,22)
+	frame.BorderSizePixel = 0
+	frame.Parent = logsScroll
+	local fc = Instance.new("UICorner", frame); fc.CornerRadius = UDim.new(0,8)
 
-	-- right (money) label neon green
-	local right = Instance.new("TextLabel")
-	right.BackgroundTransparency = 1
-	right.Position = UDim2.new(1, -180, 0, 0)
-	right.Size = UDim2.new(0, 130, 1, 0)
-	right.TextXAlignment = Enum.TextXAlignment.Right
-	right.Font = Enum.Font.GothamBold
-	right.TextSize = 16
-	right.TextColor3 = Color3.fromRGB(60, 240, 160) -- neon green
-	right.Text = FormatMoney(money)
-	right.Parent = row
+	-- left: name
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Position = UDim2.new(0,12,0,0)
+	nameLabel.Size = UDim2.new(0.55, -12, 1, 0)
+	nameLabel.Font = Enum.Font.Gotham
+	nameLabel.TextSize = 14
+	nameLabel.TextColor3 = Color3.fromRGB(235,235,235)
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.Text = tostring(data.name or "Unknown")
+	nameLabel.Parent = frame
 
-	-- small join button on the far right
+	-- right: money (neon green), right aligned but leaves space for join button
+	local moneyLabel = Instance.new("TextLabel")
+	moneyLabel.BackgroundTransparency = 1
+	moneyLabel.Size = UDim2.new(0, 110, 1, 0)
+	moneyLabel.Position = UDim2.new(1, -150, 0, 0) -- leaves 70px for button + spacing
+	moneyLabel.Font = Enum.Font.GothamBold
+	moneyLabel.TextSize = 14
+	moneyLabel.TextColor3 = Color3.fromRGB(60,240,160)
+	moneyLabel.TextXAlignment = Enum.TextXAlignment.Right
+	moneyLabel.Text = formatMoney(data.ms)
+	moneyLabel.Parent = frame
+
+	-- join button (far right)
 	local joinBtn = Instance.new("TextButton")
-	joinBtn.Size = UDim2.new(0, 60, 0, 30)
-	joinBtn.Position = UDim2.new(1, -70, 0.5, -15)
+	joinBtn.Size = UDim2.new(0,66,0,30)
+	joinBtn.Position = UDim2.new(1, -74, 0.5, -15)
 	joinBtn.BackgroundColor3 = Color3.fromRGB(60,70,75)
 	joinBtn.Font = Enum.Font.GothamBold
-	joinBtn.TextSize = 14
+	joinBtn.TextSize = 13
 	joinBtn.Text = "Join"
 	joinBtn.TextColor3 = Color3.fromRGB(245,245,245)
-	joinBtn.Parent = row
-	local jrc = Instance.new("UICorner", joinBtn)
-	jrc.CornerRadius = UDim.new(0,6)
+	joinBtn.Parent = frame
+	local jc = Instance.new("UICorner", joinBtn); jc.CornerRadius = UDim.new(0,6)
 
-	-- data container
-	local data = { name = name, money = money, frame = row, joinBtn = joinBtn }
+	-- container
+	local container = { name = data.name, ms = data.ms, row = frame, joinBtn = joinBtn }
 
-	-- join behavior (local placeholder)
-	local function doJoin()
-		AddLog("[ACTION] Attempting join to: "..tostring(name).." @ "..tostring(money))
-		-- local placeholder join function: replace with teleport or remote calls if desired
-		local ok, err = pcall(function()
-			-- placeholder: simulate success immediately
-			-- If you want real joining, replace JoinServer below with TeleportService or RemoteEvent.
-			JoinServer(data)
+	-- click handler - calls placeholder JoinServer (safe)
+	joinBtn.MouseButton1Click:Connect(function()
+		pcall(function()
+			JoinServer(container)
 		end)
-		if not ok then
-			AddLog("[ERROR] Join failed: "..tostring(err))
+	end)
+
+	return container
+end
+
+-- AddLogRow public: call with table { name = "...", ms = 1100 }
+local AutoJoinEnabled = false
+local PersistentEnabled = false
+
+local function recalcCanvas()
+	local total = 0
+	for _, c in ipairs(logsScroll:GetChildren()) do
+		if c:IsA("Frame") then
+			total = total + c.AbsoluteSize.Y + logsLayout.Padding.Offset
 		end
 	end
+	logsScroll.CanvasSize = UDim2.new(0,0,0, math.max(0, total + 8))
+end
+
+local function AddLogRow(data)
+	-- require proper format
+	if type(data) ~= "table" or not data.name or not data.ms then
+		warn("AddLogRow: expected table {name=..., ms=...}")
+		return
+	end
+
+	-- create at top: set LayoutOrder 0 and push others down
+	for _, child in ipairs(logsScroll:GetChildren()) do
+		if child:IsA("Frame") then
+			child.LayoutOrder = (child.LayoutOrder or 0) + 1
+		end
+	end
+
+	local entry = NewLogRow(data)
+	entry.row.LayoutOrder = 0
+
+	-- recalc canvas (defer a frame to ensure AbsoluteSize valid)
+	task.defer(recalcCanvas)
+
+	-- if AutoJoin enabled, trigger join attempts (respect Persistent)
+	if AutoJoinEnabled then
+		coroutine.wrap(function()
+			local attempts = PersistentEnabled and 5 or 1
+			local delayBetween = math.max(0.5, tonumber(minBox.Text) or 1)
+			local succeeded = false
+			for i = 1, attempts do
+				local ok, err = pcall(function() JoinServer(entry) end)
+				if ok then
+					succeeded = true
+					break
+				else
+					AddLogRow({ name = "[AUTO-ERR] "..tostring(data.name), ms = 0 })
+				end
+				if i < attempts then task.wait(delayBetween * 0.5) end
+			end
+		end)()
+	end
+
+	return entry
+end
+
+-- toggles
+AutoBtn.MouseButton1Click:Connect(function()
+	AutoJoinEnabled = not AutoJoinEnabled
+	AutoBtn.Text = AutoJoinEnabled and "Working..." or "Auto Join"
+end)
+
+PersBtn.MouseButton1Click:Connect(function()
+	PersistentEnabled = not PersistentEnabled
+	PersBtn.Text = PersistentEnabled and "Running..." or "Persistent Rejoin"
+end)
+
+-- open/close tween
+local tweenInfo = TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local visible = true
+local function CloseUI()
+	if not visible then return end
+	local t = TweenService:Create(Main, tweenInfo, { Size = CLOSED_SIZE })
+	t:Play(); t.Completed:Wait()
+	Content.Visible = false
+	visible = false
+end
+local function OpenUI()
+	if visible then return end
+	Content.Visible = true
+	local t = TweenService:Create(Main, tweenInfo, { Size = FULL_SIZE })
+	t:Play(); t.Completed:Wait()
+	visible = true
+end
+
+ToggleBtn.MouseButton1Click:Connect(function() if visible then CloseUI() else OpenUI() end end)
+
+-- status updater
+task.spawn(function()
+	while true do
+		Status.Text = AutoJoinEnabled and "Status: Working..." or "Status: Idle"
+		task.wait(0.2)
+	end
+end)
+
+-- keyboard toggle M
+local UserInput = game:GetService("UserInputService")
+UserInput.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	if input.KeyCode == Enum.KeyCode.M then
+		if visible then CloseUI() else OpenUI() end
+	end
+end)
+
+-- finalize initial state
+Content.Visible = true
+Main.Size = FULL_SIZE
+
+-- expose AddLogRow globally
+_G.NickScrap_AddLogRow = AddLogRow
+
+-- NOTE:
+-- Use AddLogRow({ name = "Dragon Cannelloni", ms = 1100 })
+-- to add a real log. Nothing appears until you call that.
+-- Replace JoinServer(...) with your teleport or RemoteEvent logic when ready.
+
 
 	joinBtn.MouseButton1Click:Connect(doJoin)
 
