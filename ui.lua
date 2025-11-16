@@ -1,4 +1,4 @@
--- Nick and Scrap's Auto Jointer (Final - single discord label, header drag, open/close toggle)
+-- Nick and Scrap's Auto Jointer (Final - single discord label, header drag, collapse/expand header-only toggle)
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
@@ -8,21 +8,6 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AutoJointerUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
-
--- UI Toggle Button (TOP LEFT)
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(0, 80, 0, 32)
-ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.TextSize = 14
-ToggleBtn.BorderSizePixel = 0
-ToggleBtn.Text = "CLOSE"
-ToggleBtn.Parent = ScreenGui
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
-
-local uiOpen = true
 
 -- Main Window Dimensions
 local FRAME_SIZE = UDim2.new(0, 720, 0, 380)
@@ -91,33 +76,6 @@ local function headerInputChanged(input)
     end
 end
 
--- Drag toggle button so user can move it when UI is hidden
-local toggleDragging = false
-local toggleDragStart
-local toggleStartPos
-
-local function toggleInputBegan(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        toggleDragging = true
-        toggleDragStart = input.Position
-        toggleStartPos = ToggleBtn.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                toggleDragging = false
-            end
-        end)
-    end
-end
-
-local function toggleInputChanged(input)
-    if toggleDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - toggleDragStart
-        ToggleBtn.Position = toggleStartPos + UDim2.new(0, delta.X, 0, delta.Y)
-    end
-end
-
--- Connect later after Header / Toggle exist
-
 -- ===============================================
 -- HEADER + TITLE + SINGLE DISCORD LABEL (NEON GREEN)
 -- ===============================================
@@ -142,10 +100,10 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 Title.ZIndex = 3
 
--- SINGLE DISCORD LABEL (non-interactive, same neon green as title, positioned right)
+-- SINGLE DISCORD LABEL (non-interactive, same neon green as title, positioned right but moved left to avoid overlap)
 local DiscordLabel = Instance.new("TextLabel")
 DiscordLabel.Size = UDim2.new(0, 260, 0, 25)
-DiscordLabel.Position = UDim2.new(1, -300, 0, 10) -- right side without overlapping Title or collapse button
+DiscordLabel.Position = UDim2.new(1, -360, 0, 10) -- moved left so it doesn't overlap collapse button
 DiscordLabel.BackgroundTransparency = 1
 DiscordLabel.Text = "discord.gg/pAgSFBKj"
 DiscordLabel.Font = Enum.Font.GothamBold
@@ -155,45 +113,111 @@ DiscordLabel.TextXAlignment = Enum.TextXAlignment.Right
 DiscordLabel.Parent = Header
 DiscordLabel.ZIndex = 3
 
--- Collapse/Expand Button (unchanged behavior)
+-- Collapse/Expand Button (improved behavior)
 local isExpanded = true
 local HeaderHeight = 45
 local MinHeight = UDim2.new(0, 720, 0, HeaderHeight)
 local MaxHeight = UDim2.new(0, 720, 0, 380)
 
 local CollapseBtn = Instance.new("TextButton")
-CollapseBtn.Size = UDim2.new(0, 18, 0, 18)
-CollapseBtn.Position = UDim2.new(1, -40, 0.5, -9)
+CollapseBtn.Size = UDim2.new(0, 22, 0, 22)
+CollapseBtn.Position = UDim2.new(1, -40, 0.5, -11)
 CollapseBtn.BackgroundColor3 = Color3.fromRGB(255, 75, 70)
-CollapseBtn.Text = "X"
-CollapseBtn.Font = Enum.Font.SourceSansBold
-CollapseBtn.TextSize = 14
+CollapseBtn.Text = "▲"
+CollapseBtn.Font = Enum.Font.GothamBold
+CollapseBtn.TextSize = 16
 CollapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CollapseBtn.BorderSizePixel = 0
 CollapseBtn.Parent = Header
 CollapseBtn.ZIndex = 3
 Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1, 0)
 
-CollapseBtn.MouseButton1Click:Connect(function()
-    local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - HeaderHeight) / 2
-    if isExpanded then
-        -- Collapse to header only
-        MainFrame:TweenSize(MinHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        RainbowBorder:TweenSize(MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        isExpanded = false
-    else
-        -- Expand to full
-        MainFrame:TweenSize(MaxHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        MainFrame:TweenPosition(FRAME_POS, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        RainbowBorder:TweenSize(MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        isExpanded = true
-    end
+-- Hover Glow
+CollapseBtn.MouseEnter:Connect(function()
+    CollapseBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+end)
+CollapseBtn.MouseLeave:Connect(function()
+    CollapseBtn.BackgroundColor3 = Color3.fromRGB(255, 75, 70)
 end)
 
--- Left Panel
+-- Save & load expand state (best-effort, safe pcall; may do nothing if engine doesn't allow it)
+local function loadSavedState()
+    local ok, val = pcall(function()
+        -- harmless attempt to use StarterGui Core storage as a quick toggle cache
+        return game:GetService("StarterGui"):GetCore("AutoJointer_Expanded")
+    end)
+    if ok and type(val) == "boolean" then
+        return val
+    end
+    return true
+end
+
+local function saveState(state)
+    pcall(function()
+        -- harmless attempt to use StarterGui Core storage as a quick toggle cache
+        game:GetService("StarterGui"):SetCore("AutoJointer_Expanded", state)
+    end)
+end
+
+isExpanded = loadSavedState()
+
+-- Helper: hide/show children (keeps Header visible)
+local function setChildrenVisibility(visible)
+    for _, obj in ipairs(MainFrame:GetChildren()) do
+        if obj ~= Header then
+            -- Some objects (like UICorner) may be children too; ensure we only toggle GUI elements that have Visible property
+            if typeof(obj) == "Instance" and obj:IsA("GuiObject") then
+                obj.Visible = visible
+            end
+        end
+    end
+end
+
+-- Apply initial state
+local function applyState(immediate)
+    local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - HeaderHeight) / 2
+
+    if isExpanded then
+        CollapseBtn.Text = "▲"
+        setChildrenVisibility(true)
+        if immediate then
+            MainFrame.Size = MaxHeight
+            MainFrame.Position = FRAME_POS
+            RainbowBorder.Size = MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2)
+            RainbowBorder.Position = FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS)
+        else
+            MainFrame:TweenSize(MaxHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+            MainFrame:TweenPosition(FRAME_POS, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+            RainbowBorder:TweenSize(MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+            RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+        end
+    else
+        CollapseBtn.Text = "▼"
+        setChildrenVisibility(false)
+        if immediate then
+            MainFrame.Size = MinHeight
+            MainFrame.Position = FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT)
+            RainbowBorder.Size = MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2)
+            RainbowBorder.Position = FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT)
+        else
+            MainFrame:TweenSize(MinHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+            MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+            RainbowBorder:TweenSize(MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+            RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+        end
+    end
+end
+
+-- Toggle behavior
+CollapseBtn.MouseButton1Click:Connect(function()
+    isExpanded = not isExpanded
+    saveState(isExpanded)
+    applyState(false)
+end)
+
+-- ================
+-- LEFT PANEL (content)
+-- ================
 local Left = Instance.new("Frame")
 Left.Size = UDim2.new(0, 240, 1, -55)
 Left.Position = UDim2.new(0, 0, 0, 55)
@@ -222,7 +246,9 @@ local LogScroll = Instance.new("ScrollingFrame")
 function addLog(text)
     LogBox.Text = LogBox.Text .. "\n" .. text
     task.wait()
-    LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset)
+    pcall(function()
+        LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset)
+    end)
 end
 
 -- Create Feature Toggles
@@ -278,19 +304,20 @@ Instance.new("UICorner", AutoJoinBtn).CornerRadius = UDim.new(0, 8)
 
 local isAutoJoining = false
 
+-- We'll keep the UI-only simulation behavior intact
 AutoJoinBtn.MouseButton1Click:Connect(function()
     isAutoJoining = not isAutoJoining
-    
+
     if isAutoJoining then
         -- Start working state
         AutoJoinBtn.BackgroundColor3 = WorkingColor
         AutoJoinBtn.Text = "Working"
         Status.Text = "Status: Working..."
         addLog("[AJ] Auto Join cycle started.")
-        
+
         local rawInput = tonumber(MinMSBox.Text) or 0
         local minRequired = rawInput * 1000000
-        
+
         task.spawn(function()
             if not isAutoJoining then return end
             addLog("Started Auto Join with minimum: " .. string.format("%,d", minRequired) .. " MS")
@@ -298,7 +325,7 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
             if not isAutoJoining then return end
             addLog("Querying servers...")
             task.wait(1)
-            
+
             -- Aesthetic Simulation Result
             if isAutoJoining then
                 local foundServerValue = 5000000
@@ -316,7 +343,7 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
                     addLog(" - Found Value: " .. string.format("%,d", foundServerValue) .. " MS")
                     addLog(" - Minimum Required: " .. string.format("%,d", minRequired) .. " MS")
                 end
-                
+
                 task.wait(1.5)
                 if isAutoJoining then
                     isAutoJoining = false
@@ -327,7 +354,7 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
                 end
             end
         end)
-        
+
     else
         -- Stop working state
         AutoJoinBtn.BackgroundColor3 = DefaultScanColor
@@ -443,10 +470,10 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
     AutoJoinBtn.Text = "Working"
     Status.Text = "Status: Working..."
     addLog("[AJ] Auto Join cycle started.")
-    
+
     local rawInput = tonumber(MinMSBox.Text) or 0
     local minRequired = rawInput * 1000000
-    
+
     task.spawn(function()
         if not isAutoJoining then return end
         addLog("Started Auto Join with minimum: " .. string.format("%,d", minRequired) .. " MS")
@@ -454,7 +481,7 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
         if not isAutoJoining then return end
         addLog("Querying servers...")
         task.wait(1)
-        
+
         -- Aesthetic Simulation Result
         if isAutoJoining then
             local foundServerValue = 5000000
@@ -487,21 +514,16 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
 end)
 
 -- =====================================
--- SIMPLE OPEN / CLOSE TOGGLE (TOP LEFT)
+-- (OLD) OPEN/CLOSE TOGGLE REMOVED (TOP LEFT)
 -- =====================================
-ToggleBtn.MouseButton1Click:Connect(function()
-    uiOpen = not uiOpen
+-- Note: The corner toggle button and its dragging were intentionally removed per request.
 
-    MainFrame.Visible = uiOpen
-    RainbowBorder.Visible = uiOpen
-
-    ToggleBtn.Text = uiOpen and "CLOSE" or "OPEN"
-end)
-
--- Connect dragging inputs (Header and Toggle)
+-- Connect dragging inputs (Header)
 Header.InputBegan:Connect(headerInputBegan)
 Header.InputChanged:Connect(headerInputChanged)
-ToggleBtn.InputBegan:Connect(toggleInputBegan)
-ToggleBtn.InputChanged:Connect(toggleInputChanged)
+
+-- Apply initial collapsed/expanded state immediately
+applyState(true)
 
 -- End of script (external loaders removed per request)
+
