@@ -1,8 +1,10 @@
 --[[
-    Nick and Scrap's Auto Jointer (Aesthetic UI) - ZIndex Fix
-    Ensures all content is visible on top of the dark background.
-    Safe Roblox UI - No exploits included. All 'features' are aesthetic placeholders.
-    Made for GitHub usage
+    Nick and Scrap's Auto Jointer (Aesthetic UI) - Final Version
+    - Removed yellow separators.
+    - Log Box now has a dark blue outline.
+    - Feature order updated (Auto Join > Persistent Rejoin > Minimum/sec (MS)).
+    - Auto Join status text updated to "Working".
+    - Collapse/Expand behavior verified.
 ]]
 
 local Players = game:GetService("Players")
@@ -18,6 +20,7 @@ ScreenGui.Parent = PlayerGui
 -- Main Window Dimensions
 local FRAME_SIZE = UDim2.new(0, 720, 0, 380)
 local FRAME_POS = UDim2.new(0.5, -360, 0.5, -190)
+local BORDER_THICKNESS = 2
 
 -- Main Frame (The content window)
 local MainFrame = Instance.new("Frame")
@@ -26,7 +29,7 @@ MainFrame.Position = FRAME_POS
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 35)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui 
-MainFrame.ZIndex = 1 -- Set Main Frame ZIndex
+MainFrame.ZIndex = 1
 
 -- Round corners
 local UICorner = Instance.new("UICorner", MainFrame)
@@ -34,23 +37,20 @@ UICorner.CornerRadius = UDim.new(0, 14)
 
 
 -- RAINBOW BORDER (Outline)
-local BORDER_THICKNESS = 2
 local RainbowBorder = Instance.new("Frame")
--- Size is MainFrame size + padding
 RainbowBorder.Size = FRAME_SIZE + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2) 
--- Position is MainFrame position - padding
 RainbowBorder.Position = FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS)
 RainbowBorder.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Base color
 RainbowBorder.BorderSizePixel = 0
-RainbowBorder.ZIndex = 0 -- Behind MainFrame
+RainbowBorder.ZIndex = 0 
 RainbowBorder.Parent = ScreenGui
 
 Instance.new("UICorner", RainbowBorder).CornerRadius = UDim.new(0, 14 + BORDER_THICKNESS)
 
 -- Rainbow Effect Function (Runs constantly)
 local function updateRainbow()
-    local hue = tick() % 10 / 10 -- Cycle from 0.0 to 1.0 based on time
-    RainbowBorder.BackgroundColor3 = Color3.fromHSV(hue, 1, 1) -- Set color from Hue
+    local hue = tick() % 10 / 10
+    RainbowBorder.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
 end
 game:GetService("RunService").RenderStepped:Connect(updateRainbow)
 
@@ -61,10 +61,10 @@ Header.Size = UDim2.new(1, 0, 0, 45)
 Header.BackgroundColor3 = Color3.fromRGB(33, 35, 46)
 Header.BorderSizePixel = 0
 Header.Parent = MainFrame
-Header.ZIndex = 2 -- INCREASE ZINDEX
+Header.ZIndex = 2 
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
--- Title
+-- Title and Discord Label
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -150, 0, 25)
 Title.Position = UDim2.new(0, 20, 0, 5)
@@ -75,23 +75,22 @@ Title.TextSize = 20
 Title.TextColor3 = Color3.fromRGB(80, 255, 130)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
-Title.ZIndex = 3 -- Increase ZIndex for text
+Title.ZIndex = 3 
 
--- Discord Label
 local DiscordLabel = Instance.new("TextLabel")
 DiscordLabel.Size = UDim2.new(0, 200, 0, 10)
 DiscordLabel.Position = UDim2.new(0, 20, 0, 28)
 DiscordLabel.BackgroundTransparency = 1
-DiscordLabel.Text = "Discord: [Your Discord Here]" -- Placeholder
+DiscordLabel.Text = "Discord: [Your Discord Here]"
 DiscordLabel.Font = Enum.Font.Gotham
 DiscordLabel.TextSize = 10
 DiscordLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 DiscordLabel.TextXAlignment = Enum.TextXAlignment.Left
 DiscordLabel.Parent = Header
-DiscordLabel.ZIndex = 3 -- Increase ZIndex for text
+DiscordLabel.ZIndex = 3 
 
 
--- Collapse/Expand Button (Replaces traffic lights)
+-- Collapse/Expand Button 
 local isExpanded = true
 local MinHeight = UDim2.new(0, 720, 0, 45) -- Height of the header
 local MaxHeight = UDim2.new(0, 720, 0, 380) -- Full height
@@ -99,14 +98,14 @@ local MaxHeight = UDim2.new(0, 720, 0, 380) -- Full height
 local CollapseBtn = Instance.new("TextButton")
 CollapseBtn.Size = UDim2.new(0, 18, 0, 18)
 CollapseBtn.Position = UDim2.new(1, -40, 0.5, -9)
-CollapseBtn.BackgroundColor3 = Color3.fromRGB(255, 75, 70) -- Red
+CollapseBtn.BackgroundColor3 = Color3.fromRGB(255, 75, 70) 
 CollapseBtn.Text = "X"
 CollapseBtn.Font = Enum.Font.SourceSansBold
 CollapseBtn.TextSize = 14
 CollapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CollapseBtn.BorderSizePixel = 0
 CollapseBtn.Parent = Header
-CollapseBtn.ZIndex = 3 -- Increase ZIndex for button
+CollapseBtn.ZIndex = 3 
 Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1, 0)
 
 CollapseBtn.MouseButton1Click:Connect(function()
@@ -141,7 +140,7 @@ Left.Position = UDim2.new(0, 0, 0, 55)
 Left.BackgroundColor3 = Color3.fromRGB(30, 32, 42)
 Left.BorderSizePixel = 0
 Left.Parent = MainFrame
-Left.ZIndex = 2 -- INCREASE ZINDEX
+Left.ZIndex = 2 
 Instance.new("UICorner", Left).CornerRadius = UDim.new(0, 10)
 
 -- Left Title ("Features")
@@ -154,40 +153,8 @@ LeftTitle.BackgroundTransparency = 1
 LeftTitle.Position = UDim2.new(0, 15, 0, 10)
 LeftTitle.Size = UDim2.new(1, -20, 0, 20)
 LeftTitle.Parent = Left
-LeftTitle.ZIndex = 3 -- Increase ZIndex for text
+LeftTitle.ZIndex = 3 
 
--- Input Creator (Updated for Minimum MS)
-local function createInput(labelText, defaultText, yPos)
-    local Label = Instance.new("TextLabel")
-    Label.Text = labelText
-    Label.Font = Enum.Font.GothamMedium
-    Label.TextSize = 14
-    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
-    Label.BackgroundTransparency = 1
-    Label.Position = UDim2.new(0, 15, 0, yPos)
-    Label.Size = UDim2.new(1, -30, 0, 18)
-    Label.Parent = Left
-    Label.ZIndex = 3 -- Increase ZIndex for text
-
-    local Box = Instance.new("TextBox")
-    Box.Text = defaultText
-    Box.Font = Enum.Font.Gotham
-    Box.TextSize = 14
-    Box.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Box.BackgroundColor3 = Color3.fromRGB(41, 43, 55)
-    Box.Position = UDim2.new(0, 15, 0, yPos + 22)
-    Box.Size = UDim2.new(1, -30, 0, 32)
-    Box.BorderSizePixel = 0
-    Box.Parent = Left
-    Box.ZIndex = 3 -- Increase ZIndex for input box
-
-    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 6)
-
-    return Box
-end
-
--- Feature 1: Minimum/sec (MS)
-local MinMSBox = createInput("Minimum/sec (MS)", "1000000000000000", 50)
 
 -- Log definition (must be defined first for toggles to use it)
 local LogBox = Instance.new("TextLabel")
@@ -214,7 +181,7 @@ local function createFeatureToggle(text, yPos)
     Btn.Size = UDim2.new(1, -30, 0, 40)
     Btn.BorderSizePixel = 0
     Btn.Parent = Left
-    Btn.ZIndex = 3 -- Increase ZIndex for button
+    Btn.ZIndex = 3
 
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
     
@@ -234,11 +201,7 @@ local function createFeatureToggle(text, yPos)
     return Btn
 end
 
--- Feature 3: Persistent Auto Join (Toggle style)
-local PersistentAutoJoinBtn = createFeatureToggle("Persistent Auto Join", 210)
-
-
--- Feature 2: Auto Join (Button style)
+-- Feature 1: Auto Join (Button style) - Moved up
 local AutoJoinBtn = Instance.new("TextButton")
 AutoJoinBtn.Text = "Auto Join"
 AutoJoinBtn.Font = Enum.Font.GothamBold
@@ -246,13 +209,48 @@ AutoJoinBtn.TextSize = 16
 AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(40, 210, 120)
 local DefaultScanColor = AutoJoinBtn.BackgroundColor3
 AutoJoinBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-AutoJoinBtn.Position = UDim2.new(0, 15, 1, -115) 
+AutoJoinBtn.Position = UDim2.new(0, 15, 0, 50) -- Moved to y=50
 AutoJoinBtn.Size = UDim2.new(1, -30, 0, 40)
 AutoJoinBtn.BorderSizePixel = 0
 AutoJoinBtn.Parent = Left
-AutoJoinBtn.ZIndex = 3 -- Increase ZIndex for button
-
+AutoJoinBtn.ZIndex = 3 
 Instance.new("UICorner", AutoJoinBtn).CornerRadius = UDim.new(0, 8)
+
+-- Feature 2: Persistent Rejoin (Toggle style) - Moved up and renamed
+local PersistentRejoinBtn = createFeatureToggle("Persistent Rejoin", 100) -- Moved to y=100
+
+-- Feature 3: Minimum/sec (MS) - Moved lower
+local function createInput(labelText, defaultText, yPos)
+    local Label = Instance.new("TextLabel")
+    Label.Text = labelText
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 14
+    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Label.BackgroundTransparency = 1
+    Label.Position = UDim2.new(0, 15, 0, yPos)
+    Label.Size = UDim2.new(1, -30, 0, 18)
+    Label.Parent = Left
+    Label.ZIndex = 3 
+
+    local Box = Instance.new("TextBox")
+    Box.Text = defaultText
+    Box.Font = Enum.Font.Gotham
+    Box.TextSize = 14
+    Box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Box.BackgroundColor3 = Color3.fromRGB(41, 43, 55)
+    Box.Position = UDim2.new(0, 15, 0, yPos + 22)
+    Box.Size = UDim2.new(1, -30, 0, 32)
+    Box.BorderSizePixel = 0
+    Box.Parent = Left
+    Box.ZIndex = 3 
+
+    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 6)
+
+    return Box
+end
+
+local MinMSBox = createInput("Minimum/sec (MS)", "1000000000000000", 170) -- Moved to y=170
+
 
 -- Status Label
 local Status = Instance.new("TextLabel")
@@ -264,16 +262,9 @@ Status.BackgroundTransparency = 1
 Status.Position = UDim2.new(0, 15, 1, -25)
 Status.Size = UDim2.new(1, -30, 0, 20)
 Status.Parent = Left
-Status.ZIndex = 3 -- Increase ZIndex for text
+Status.ZIndex = 3 
 
--- Yellow Separator Line (Between Left and Right Panels)
-local Separator = Instance.new("Frame")
-Separator.Size = UDim2.new(0, 2, 1, -55)
-Separator.Position = UDim2.new(0, 249, 0, 55)
-Separator.BackgroundColor3 = Color3.fromRGB(255, 230, 80) -- Yellow
-Separator.BorderSizePixel = 0
-Separator.Parent = MainFrame
-Separator.ZIndex = 2 -- INCREASE ZINDEX
+-- Yellow Separator Line (Removed)
 
 
 -- Right Panel (Logs)
@@ -283,7 +274,7 @@ Right.Position = UDim2.new(0, 260, 0, 55)
 Right.BackgroundColor3 = Color3.fromRGB(30, 32, 42)
 Right.BorderSizePixel = 0
 Right.Parent = MainFrame
-Right.ZIndex = 2 -- INCREASE ZINDEX
+Right.ZIndex = 2 
 Instance.new("UICorner", Right).CornerRadius = UDim.new(0, 10)
 
 local LogTitle = Instance.new("TextLabel")
@@ -295,28 +286,23 @@ LogTitle.BackgroundTransparency = 1
 LogTitle.Position = UDim2.new(0, 15, 0, 10)
 LogTitle.Size = UDim2.new(1, -20, 0, 20)
 LogTitle.Parent = Right
-LogTitle.ZIndex = 3 -- Increase ZIndex for text
+LogTitle.ZIndex = 3 
 
--- Yellow Line below Log Title
-local LogTitleSeparator = Instance.new("Frame")
-LogTitleSeparator.Size = UDim2.new(1, -30, 0, 2)
-LogTitleSeparator.Position = UDim2.new(0, 15, 0, 35)
-LogTitleSeparator.BackgroundColor3 = Color3.fromRGB(255, 230, 80) -- Yellow
-LogTitleSeparator.BorderSizePixel = 0
-LogTitleSeparator.Parent = Right
-LogTitleSeparator.ZIndex = 3 -- Increase ZIndex
+-- Yellow Line below Log Title (Removed)
+
 
 -- Log Box (ScrollingFrame)
 LogScroll.Position = UDim2.new(0, 15, 0, 45)
 LogScroll.Size = UDim2.new(1, -30, 1, -60)
 LogScroll.BackgroundColor3 = Color3.fromRGB(23, 24, 32)
-LogScroll.BorderSizePixel = 0
+LogScroll.BorderSizePixel = 2 -- Added border
+LogScroll.BorderColor3 = Color3.fromRGB(30, 30, 50) -- Dark Blue Border
 LogScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 LogScroll.ScrollingDirection = Enum.ScrollingDirection.Y
 LogScroll.ScrollBarImageColor3 = Color3.fromRGB(50, 52, 65)
 LogScroll.Parent = Right
-LogScroll.ZIndex = 3 -- Increase ZIndex
+LogScroll.ZIndex = 3 
 
 Instance.new("UICorner", LogScroll).CornerRadius = UDim.new(0, 8)
 
@@ -334,19 +320,19 @@ LogBox.TextXAlignment = Enum.TextXAlignment.Left
 LogBox.TextYAlignment = Enum.TextYAlignment.Top
 LogBox.AutomaticSize = Enum.AutomaticSize.Y
 LogBox.Parent = LogScroll
-LogBox.ZIndex = 4 -- Draw above the LogScroll background
+LogBox.ZIndex = 4 
 
 
 -- Fake Auto Join Behavior
 AutoJoinBtn.MouseButton1Click:Connect(function()
     -- Prevent re-scan while scanning
-    if Status.Text == "Status: Auto-Joining..." then return end
+    if Status.Text == "Status: Working..." then return end
     
     -- Reset and Start
     LogBox.Text = "" -- Clear previous logs
     AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(255, 190, 70) -- Yellow while active
-    AutoJoinBtn.Text = "AUTO-JOINING..."
-    Status.Text = "Status: Auto-Joining..."
+    AutoJoinBtn.Text = "Working" -- Changed to "Working"
+    Status.Text = "Status: Working..."
     
     addLog("Started Auto Join with minimum: " .. MinMSBox.Text .. " MS")
 
@@ -355,7 +341,7 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
     task.wait(1)
 
     addLog("[SUCCESS] Found 1 high-value server. Joining now...")
-    addLog("Target: Players: 1/15 | Value: 1000000000000000000000000000") -- Billion quadrillion trillion
+    addLog("Target: Players: 1/15 | Value: 1000000000000000000000000000") 
     task.wait(1)
     
     -- Finish Scan
