@@ -1,17 +1,14 @@
 --[[
-    Nick and Scrap's Auto Jointer (Aesthetic UI) - FINAL VERSION (FIXED)
-    - Fixed header-only dragging (no snap-to-corner)
-    - Fixed collapse/expand to keep position and show only header+discord+X
-    - Discord copy uses setclipboard/toclipboard when available (safe fallback in Studio)
-    - Kept all original layout, colors, and behavior (mock AutoJoin preserved)
+    Nick and Scrap's Auto Jointer (Aesthetic UI) - FINAL VERSION
+    
+    -- Discord link is now a clickable button that simulates copying the link.
+    -- The mock rare item log has been updated to use the term "Brainrot."
+    -- The Minimum/sec (MS) input is automatically multiplied by 1,000,000 (Millions).
 ]]
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
 -- Main ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
@@ -20,10 +17,8 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
 -- Main Window Dimensions
-local FRAME_W = 720
-local FRAME_H = 380
-local FRAME_SIZE = UDim2.new(0, FRAME_W, 0, FRAME_H)
-local FRAME_POS = UDim2.new(0.5, -FRAME_W/2, 0.5, -FRAME_H/2)
+local FRAME_SIZE = UDim2.new(0, 720, 0, 380)
+local FRAME_POS = UDim2.new(0.5, -360, 0.5, -190)
 local BORDER_THICKNESS = 2
 
 -- Main Frame (The content window)
@@ -36,16 +31,19 @@ MainFrame.Parent = ScreenGui
 MainFrame.ZIndex = 1
 
 -- Round corners
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 14)
+local UICorner = Instance.new("UICorner", MainFrame)
+UICorner.CornerRadius = UDim.new(0, 14)
+
 
 -- RAINBOW BORDER (Outline)
 local RainbowBorder = Instance.new("Frame")
 RainbowBorder.Size = FRAME_SIZE + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2) 
 RainbowBorder.Position = FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS)
-RainbowBorder.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+RainbowBorder.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Base color
 RainbowBorder.BorderSizePixel = 0
 RainbowBorder.ZIndex = 0 
 RainbowBorder.Parent = ScreenGui
+
 Instance.new("UICorner", RainbowBorder).CornerRadius = UDim.new(0, 14 + BORDER_THICKNESS)
 
 -- Rainbow Effect Function (Runs constantly)
@@ -53,7 +51,8 @@ local function updateRainbow()
     local hue = tick() % 10 / 10
     RainbowBorder.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
 end
-RunService.RenderStepped:Connect(updateRainbow)
+game:GetService("RunService").RenderStepped:Connect(updateRainbow)
+
 
 -- Header Bar
 local Header = Instance.new("Frame")
@@ -91,63 +90,20 @@ DiscordBtn.Parent = Header
 DiscordBtn.ZIndex = 3 
 
 local originalDiscordColor = DiscordBtn.TextColor3
-
--- We'll use this addLog if your original isn't defined earlier; your script defines it later so we keep it
--- but create a safe local reference to avoid errors in the clipboard code
-local function safeAddLog(msg)
-    if type(addLog) == "function" then
-        pcall(addLog, msg)
-    else
-        print("[AutoJointer LOG] "..tostring(msg))
-    end
-end
-
--- Clipboard behavior: use exploit functions if available; fallback to notification/log in Studio
-local DISCORD_LINK = "https://discord.gg/pAgSFBKj"
 DiscordBtn.MouseButton1Click:Connect(function()
-    local copied = false
-    -- attempt common exploit functions in protected pcall
-    pcall(function()
-        if setclipboard then
-            setclipboard(DISCORD_LINK)
-            copied = true
-        elseif toclipboard then
-            toclipboard(DISCORD_LINK)
-            copied = true
-        elseif syn and syn.set_clipboard then
-            syn.set_clipboard(DISCORD_LINK)
-            copied = true
-        elseif (queue_on_teleport) and false then
-            -- placeholder for other non-standard environments (no-op)
-        end
-    end)
-
-    if copied then
-        safeAddLog("[DISCORD] Link copied to clipboard.")
-        DiscordBtn.TextColor3 = Color3.fromRGB(255,255,255)
-        task.wait(0.12)
-        DiscordBtn.TextColor3 = originalDiscordColor
-    else
-        -- fallback: notify the user to manually copy (Studio or secure environment)
-        pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "Clipboard unavailable";
-                Text = "Clipboard unavailable here. Manually copy: "..DISCORD_LINK;
-                Duration = 3;
-            })
-        end)
-        safeAddLog("[DISCORD] Clipboard unavailable; please copy manually: "..DISCORD_LINK)
-        DiscordBtn.TextColor3 = Color3.fromRGB(255,255,255)
-        task.wait(0.12)
-        DiscordBtn.TextColor3 = originalDiscordColor
-    end
+    addLog("[DISCORD] Link copied to clipboard (Aesthetic Only).")
+    -- Simulate click feedback
+    DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    task.wait(0.1)
+    DiscordBtn.TextColor3 = originalDiscordColor
 end)
+
 
 -- Collapse/Expand Button 
 local isExpanded = true
 local HeaderHeight = 45 
-local MinHeight = UDim2.new(0, FRAME_W, 0, HeaderHeight) 
-local MaxHeight = UDim2.new(0, FRAME_W, 0, FRAME_H) 
+local MinHeight = UDim2.new(0, 720, 0, HeaderHeight) 
+local MaxHeight = UDim2.new(0, 720, 0, 380) 
 
 local CollapseBtn = Instance.new("TextButton")
 CollapseBtn.Size = UDim2.new(0, 18, 0, 18)
@@ -161,6 +117,26 @@ CollapseBtn.BorderSizePixel = 0
 CollapseBtn.Parent = Header
 CollapseBtn.ZIndex = 3 
 Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1, 0)
+
+CollapseBtn.MouseButton1Click:Connect(function()
+    local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - HeaderHeight) / 2
+    
+    if isExpanded then
+        -- Collapse UI to only the header bar
+        MainFrame:TweenSize(MinHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3) 
+        RainbowBorder:TweenSize(MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        isExpanded = false
+    else
+        -- Expand UI to full size
+        MainFrame:TweenSize(MaxHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        MainFrame:TweenPosition(FRAME_POS, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        RainbowBorder:TweenSize(MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        isExpanded = true
+    end
+end)
 
 -- Left Panel
 local Left = Instance.new("Frame")
@@ -348,6 +324,7 @@ LogBox.AutomaticSize = Enum.AutomaticSize.Y
 LogBox.Parent = LogScroll
 LogBox.ZIndex = 4 
 
+
 -- Fake Auto Join Behavior (Simulates filtering and joining)
 AutoJoinBtn.MouseButton1Click:Connect(function()
     if Status.Text == "Status: Working..." then return end
@@ -394,5 +371,7 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
     addLog("Auto Join Cycle Complete (UI Only)")
     Status.Text = "Status: Finished"
 end)
+
+
 
 
