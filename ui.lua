@@ -1,8 +1,9 @@
 --[[
-    Nick and Scrap's Auto Jointer (Aesthetic UI) - Minimum Filter Updated
+    Nick and Scrap's Auto Jointer (Aesthetic UI) - FINAL VERSION
     
-    -- The Minimum/sec (MS) input is now automatically multiplied by 1,000,000 (1 Million)
-    -- The default text has been changed to "10" to represent 10 Million.
+    -- Discord link is now a clickable button that simulates copying the link.
+    -- The mock rare item log has been updated to use the term "Brainrot."
+    -- The Minimum/sec (MS) input is automatically multiplied by 1,000,000 (Millions).
 ]]
 
 local Players = game:GetService("Players")
@@ -75,18 +76,27 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 Title.ZIndex = 3 
 
--- HIGH VISIBILITY DISCORD LABEL
-local DiscordLabel = Instance.new("TextLabel")
-DiscordLabel.Size = UDim2.new(0, 200, 0, 15)
-DiscordLabel.Position = UDim2.new(0, 20, 0, 25)
-DiscordLabel.BackgroundTransparency = 1
-DiscordLabel.Text = "Discord: discord.gg/pAgSFBKj" 
-DiscordLabel.Font = Enum.Font.GothamBold 
-DiscordLabel.TextSize = 13 
-DiscordLabel.TextColor3 = Color3.fromRGB(80, 255, 130) 
-DiscordLabel.TextXAlignment = Enum.TextXAlignment.Left
-DiscordLabel.Parent = Header
-DiscordLabel.ZIndex = 3 
+-- HIGH VISIBILITY CLICKABLE DISCORD LINK
+local DiscordBtn = Instance.new("TextButton")
+DiscordBtn.Size = UDim2.new(0, 200, 0, 15)
+DiscordBtn.Position = UDim2.new(0, 20, 0, 25)
+DiscordBtn.BackgroundTransparency = 1
+DiscordBtn.Text = "Discord: discord.gg/pAgSFBKj (Click to Copy)"
+DiscordBtn.Font = Enum.Font.GothamBold 
+DiscordBtn.TextSize = 13 
+DiscordBtn.TextColor3 = Color3.fromRGB(80, 255, 130) 
+DiscordBtn.TextXAlignment = Enum.TextXAlignment.Left
+DiscordBtn.Parent = Header
+DiscordBtn.ZIndex = 3 
+
+local originalDiscordColor = DiscordBtn.TextColor3
+DiscordBtn.MouseButton1Click:Connect(function()
+    addLog("[DISCORD] Link copied to clipboard (Aesthetic Only).")
+    -- Simulate click feedback
+    DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    task.wait(0.1)
+    DiscordBtn.TextColor3 = originalDiscordColor
+end)
 
 
 -- Collapse/Expand Button 
@@ -331,7 +341,7 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
     -- MOCK DATA (5 Million joins/sec)
     local foundServerValue = 5000000 
     local foundServerID = "79afcaad-2057-4e00-8a81-b741cef3f6ad"
-    local rarestItemName = "The Quadrillionaire's BrainCell"
+    local rarestItemName = "Mega-Brainrot Gem" -- Updated to "Brainrot" terminology
     local rarestItemValue = 999999999999999999
 
     addLog("Started Auto Join with minimum: " .. string.format("%,d", minRequired) .. " MS")
@@ -343,7 +353,7 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
     if foundServerValue >= minRequired then
         -- MOCK SUCCESS AND JOIN
         addLog("[SUCCESS] High-value server found!")
-        addLog("  - Best Item: " .. rarestItemName)
+        addLog("  - Rarest Brainrot: " .. rarestItemName)
         addLog("  - Value: $" .. string.format("%,d", rarestItemValue))
         addLog("  - Server Value: " .. string.format("%,d", foundServerValue) .. " (Filter PASS)")
         addLog("  - Teleport initiated (Aesthetic Only) to ID: " .. foundServerID)
