@@ -108,4 +108,3 @@ CloseButton.MouseButton1Click:Connect(function()
         MainFrame.Size = UDim2.new(0, 830, 0, fullHeight)
     end
 end)
-
