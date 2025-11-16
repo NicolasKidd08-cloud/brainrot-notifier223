@@ -84,7 +84,7 @@ Header.Size = UDim2.new(1, 0, 0, 45)
 Header.BackgroundColor3 = Color3.fromRGB(33, 35, 46)
 Header.BorderSizePixel = 0
 Header.Parent = MainFrame
-Header.ZIndex = 2
+Header.ZIndex = 20 -- ensure header (and its buttons) are on top
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
 -- Title
@@ -98,20 +98,60 @@ Title.TextSize = 20
 Title.TextColor3 = Color3.fromRGB(80, 255, 130) -- neon green used as source color
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
-Title.ZIndex = 3
+Title.ZIndex = 21
 
--- SINGLE DISCORD LABEL (non-interactive, same neon green as title, positioned right but moved left to avoid overlap)
-local DiscordLabel = Instance.new("TextLabel")
-DiscordLabel.Size = UDim2.new(0, 260, 0, 25)
-DiscordLabel.Position = UDim2.new(1, -360, 0, 10) -- moved left so it doesn't overlap collapse button
-DiscordLabel.BackgroundTransparency = 1
-DiscordLabel.Text = "discord.gg/pAgSFBKj"
-DiscordLabel.Font = Enum.Font.GothamBold
-DiscordLabel.TextSize = 16
-DiscordLabel.TextColor3 = Color3.fromRGB(80, 255, 130) -- match title color
-DiscordLabel.TextXAlignment = Enum.TextXAlignment.Right
-DiscordLabel.Parent = Header
-DiscordLabel.ZIndex = 3
+-- CLICKABLE DISCORD BUTTON (transparent, copies to clipboard)
+local DiscordBtn = Instance.new("TextButton")
+DiscordBtn.Size = UDim2.new(0, 260, 0, 25)
+DiscordBtn.Position = UDim2.new(1, -380, 0, 10) -- moved left a bit more to ensure no overlap with collapse button
+DiscordBtn.BackgroundTransparency = 1
+DiscordBtn.AutoButtonColor = false
+DiscordBtn.Text = "discord.gg/pAgSFBKj"
+DiscordBtn.Font = Enum.Font.GothamBold
+DiscordBtn.TextSize = 16
+DiscordBtn.TextColor3 = Color3.fromRGB(80, 255, 130) -- match title color
+DiscordBtn.TextXAlignment = Enum.TextXAlignment.Right
+DiscordBtn.Parent = Header
+DiscordBtn.ZIndex = 22
+
+-- Optional hover visual for discord
+DiscordBtn.MouseEnter:Connect(function()
+    DiscordBtn.TextTransparency = 0.2
+end)
+DiscordBtn.MouseLeave:Connect(function()
+    DiscordBtn.TextTransparency = 0
+end)
+
+-- Copy invite to clipboard when clicked (safe pcall)
+DiscordBtn.MouseButton1Click:Connect(function()
+    local ok, err = pcall(function()
+        -- Try Roblox global setclipboard (may exist depending on environment/executor)
+        if setclipboard then
+            setclipboard(DiscordBtn.Text)
+        else
+            -- Try StarterGui SetCore clipboard if available (some runtimes use this)
+            pcall(function() game:GetService("StarterGui"):SetCore("CopyToClipboard", DiscordBtn.Text) end)
+        end
+    end)
+    if ok then
+        -- small feedback in log if available
+        pcall(function()
+            if LogBox then
+                LogBox.Text = LogBox.Text .. "\n[UI] Discord invite copied to clipboard."
+                -- scroll to bottom safely
+                task.defer(function()
+                    pcall(function() LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset) end)
+                end)
+            end
+        end)
+    else
+        pcall(function()
+            if LogBox then
+                LogBox.Text = LogBox.Text .. "\n[UI] Unable to copy invite (environment may not allow clipboard)."
+            end
+        end)
+    end
+end)
 
 -- Collapse/Expand Button (improved behavior)
 local isExpanded = true
@@ -120,8 +160,8 @@ local MinHeight = UDim2.new(0, 720, 0, HeaderHeight)
 local MaxHeight = UDim2.new(0, 720, 0, 380)
 
 local CollapseBtn = Instance.new("TextButton")
-CollapseBtn.Size = UDim2.new(0, 22, 0, 22)
-CollapseBtn.Position = UDim2.new(1, -40, 0.5, -11)
+CollapseBtn.Size = UDim2.new(0, 26, 0, 26)
+CollapseBtn.Position = UDim2.new(1, -40, 0.5, -13)
 CollapseBtn.BackgroundColor3 = Color3.fromRGB(255, 75, 70)
 CollapseBtn.Text = "▲"
 CollapseBtn.Font = Enum.Font.GothamBold
@@ -129,7 +169,7 @@ CollapseBtn.TextSize = 16
 CollapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CollapseBtn.BorderSizePixel = 0
 CollapseBtn.Parent = Header
-CollapseBtn.ZIndex = 3
+CollapseBtn.ZIndex = 23
 Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1, 0)
 
 -- Hover Glow
@@ -143,7 +183,6 @@ end)
 -- Save & load expand state (best-effort, safe pcall; may do nothing if engine doesn't allow it)
 local function loadSavedState()
     local ok, val = pcall(function()
-        -- harmless attempt to use StarterGui Core storage as a quick toggle cache
         return game:GetService("StarterGui"):GetCore("AutoJointer_Expanded")
     end)
     if ok and type(val) == "boolean" then
@@ -154,7 +193,6 @@ end
 
 local function saveState(state)
     pcall(function()
-        -- harmless attempt to use StarterGui Core storage as a quick toggle cache
         game:GetService("StarterGui"):SetCore("AutoJointer_Expanded", state)
     end)
 end
@@ -165,7 +203,6 @@ isExpanded = loadSavedState()
 local function setChildrenVisibility(visible)
     for _, obj in ipairs(MainFrame:GetChildren()) do
         if obj ~= Header then
-            -- Some objects (like UICorner) may be children too; ensure we only toggle GUI elements that have Visible property
             if typeof(obj) == "Instance" and obj:IsA("GuiObject") then
                 obj.Visible = visible
             end
@@ -208,8 +245,9 @@ local function applyState(immediate)
     end
 end
 
--- Toggle behavior
+-- Toggle behavior (robust)
 CollapseBtn.MouseButton1Click:Connect(function()
+    -- ensure button click isn't blocked by overlapping elements
     isExpanded = not isExpanded
     saveState(isExpanded)
     applyState(false)
@@ -526,4 +564,5 @@ Header.InputChanged:Connect(headerInputChanged)
 applyState(true)
 
 -- End of script (external loaders removed per request)
+
 
