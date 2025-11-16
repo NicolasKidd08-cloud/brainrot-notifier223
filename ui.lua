@@ -1,226 +1,227 @@
---// Brainrot Dev UI (SAFE)
---// No exploits, no autojoin bypass, dev tools only.
+--// Lumora Priority Style UI (Dark Neon Theme)
+--// Safe in-game UI only — NO exploit behavior
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TeleportService = game:GetService("TeleportService")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
 
-local LocalPlayer = Players.LocalPlayer
+local UI = {}
 
-local Allowed = { ["Nicolas Kidd"] = true }
-if not Allowed[LocalPlayer.Name] then return end
+--// Create Function
+function UI:Create()
 
-local BrainrotEvent = ReplicatedStorage:WaitForChild("BrainrotLog")
+    -- ScreenGui
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "LumoraPriorityUI"
+    gui.ResetOnSpawn = false
+    gui.Parent = PlayerGui
 
+    -- Main Frame
+    local main = Instance.new("Frame")
+    main.Size = UDim2.new(0, 750, 0, 400)
+    main.Position = UDim2.new(0.5, -375, 0.5, -200)
+    main.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+    main.BorderSizePixel = 0
+    main.Parent = gui
 
---// Main UI
-local ScreenGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
-ScreenGui.Name = "BrainrotDevUI"
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
 
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 510, 0, 375)
-Main.Position = UDim2.new(0.5, -255, 0.5, -187)
-Main.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
-Main.Parent = ScreenGui
+    -- Title Bar
+    local title = Instance.new("Frame")
+    title.Size = UDim2.new(1, 0, 0, 50)
+    title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    title.BorderSizePixel = 0
+    title.Parent = main
 
-local Corner = Instance.new("UICorner", Main)
-Corner.CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", title).CornerRadius = UDim.new(0, 12)
 
---// TOP BAR
-local Top = Instance.new("Frame", Main)
-Top.Size = UDim2.new(1, 0, 0, 42)
-Top.BackgroundColor3 = Color3.fromRGB(10, 35, 70)
+    local titleText = Instance.new("TextLabel")
+    titleText.Size = UDim2.new(1, -50, 1, 0)
+    titleText.Position = UDim2.new(0, 20, 0, 0)
+    titleText.BackgroundTransparency = 1
+    titleText.Font = Enum.Font.GothamBold
+    titleText.TextSize = 26
+    titleText.Text = "Lumora Priority"
+    titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    titleText.Parent = title
 
-local TopCorner = Instance.new("UICorner", Top)
-TopCorner.CornerRadius = UDim.new(0, 10)
+    -- Close Button
+    local close = Instance.new("TextButton")
+    close.Size = UDim2.new(0, 40, 0, 40)
+    close.Position = UDim2.new(1, -45, 0, 5)
+    close.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    close.Text = "X"
+    close.Font = Enum.Font.GothamBold
+    close.TextSize = 20
+    close.TextColor3 = Color3.new(1, 1, 1)
+    close.Parent = title
 
-local Title = Instance.new("TextLabel", Top)
-Title.Text = "Nicolas's Autojoiner • Discord: discord.gg/yourlink"
-Title.Size = UDim2.new(1, -60, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Font = Enum.Font.GothamSemibold
-Title.TextSize = 17
+    Instance.new("UICorner", close).CornerRadius = UDim.new(0, 10)
 
--- CLOSE BUTTON
-local Close = Instance.new("TextButton", Top)
-Close.Size = UDim2.new(0, 36, 0, 24)
-Close.Position = UDim2.new(1, -40, 0.5, -12)
-Close.Text = "-"
-Close.TextColor3 = Color3.fromRGB(255, 255, 255)
-Close.Font = Enum.Font.GothamBold
-Close.TextSize = 20
-Close.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
+    close.MouseButton1Click:Connect(function()
+        gui:Destroy()
+    end)
 
-local CloseCorner = Instance.new("UICorner", Close)
-CloseCorner.CornerRadius = UDim.new(0, 6)
+    ----------------------------------------------------
+    -- LEFT PANEL -- (Settings Column)
+    ----------------------------------------------------
 
-local Minimized = false
+    local left = Instance.new("Frame")
+    left.Size = UDim2.new(0, 230, 1, -50)
+    left.Position = UDim2.new(0, 0, 0, 50)
+    left.BackgroundTransparency = 1
+    left.Parent = main
 
-Close.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
+    local function CreateToggle(text, yOffset)
+        local container = Instance.new("Frame")
+        container.Size = UDim2.new(1, -20, 0, 32)
+        container.Position = UDim2.new(0, 10, 0, yOffset)
+        container.BackgroundTransparency = 1
+        container.Parent = left
 
-    if Minimized then
-        Main.Size = UDim2.new(0, 510, 0, 42)
-    else
-        Main.Size = UDim2.new(0, 510, 0, 375)
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0.7, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 18
+        label.TextColor3 = Color3.new(1, 1, 1)
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Text = text
+        label.Parent = container
+
+        local toggle = Instance.new("TextButton")
+        toggle.Size = UDim2.new(0, 40, 0, 25)
+        toggle.Position = UDim2.new(0.8, 0, 0, 3)
+        toggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        toggle.Text = ""
+        toggle.Parent = container
+
+        Instance.new("UICorner", toggle).CornerRadius = UDim.new(1, 0)
+
+        local state = false
+        toggle.MouseButton1Click:Connect(function()
+            state = not state
+            toggle.BackgroundColor3 = state and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(60, 60, 60)
+        end)
+
+        return toggle, function() return state end
     end
-end)
 
--- LINE BELOW TOP BAR
-local TopLine = Instance.new("Frame", Main)
-TopLine.Size = UDim2.new(1, 0, 0, 2)
-TopLine.Position = UDim2.new(0, 0, 0, 42)
-TopLine.BackgroundColor3 = Color3.fromRGB(255, 210, 0)
+    -- Toggles like screenshot
+    CreateToggle("Auto Join", 10)
+    CreateToggle("Pet Name Filters", 50)
 
+    -- Money Filter
+    local lbl = Instance.new("TextLabel")
+    lbl.Text = "Money Filter"
+    lbl.Size = UDim2.new(1, -20, 0, 25)
+    lbl.Position = UDim2.new(0, 10, 0, 100)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 18
+    lbl.TextColor3 = Color3.new(1, 1, 1)
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = left
 
----------------------------------------------------------------------
---// LEFT PANEL (FEATURES)
----------------------------------------------------------------------
-local Left = Instance.new("Frame", Main)
-Left.Size = UDim2.new(0, 170, 1, -44)
-Left.Position = UDim2.new(0, 0, 0, 44)
-Left.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+    local moneyBox = Instance.new("TextBox")
+    moneyBox.Size = UDim2.new(0.8, 0, 0, 30)
+    moneyBox.Position = UDim2.new(0, 10, 0, 135)
+    moneyBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    moneyBox.BorderSizePixel = 0
+    moneyBox.Font = Enum.Font.Gotham
+    moneyBox.TextSize = 18
+    moneyBox.TextColor3 = Color3.new(1, 1, 1)
+    moneyBox.Text = "100"
+    moneyBox.Parent = left
 
-local LeftCorner = Instance.new("UICorner", Left)
-LeftCorner.CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", moneyBox).CornerRadius = UDim.new(0, 6)
 
--- Column line
-local Separator = Instance.new("Frame", Main)
-Separator.Size = UDim2.new(0, 2, 1, -44)
-Separator.Position = UDim2.new(0, 170, 0, 44)
-Separator.BackgroundColor3 = Color3.fromRGB(255, 210, 0)
+    ----------------------------------------------------
+    -- RIGHT PANEL (List)
+    ----------------------------------------------------
 
--- Features title
-local FeatureTitle = Instance.new("TextLabel", Left)
-FeatureTitle.Size = UDim2.new(1, 0, 0, 30)
-FeatureTitle.Text = "Autojoin Settings"
-FeatureTitle.Font = Enum.Font.GothamBold
-FeatureTitle.TextSize = 17
-FeatureTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-FeatureTitle.BackgroundTransparency = 1
+    local right = Instance.new("Frame")
+    right.Size = UDim2.new(1, -240, 1, -50)
+    right.Position = UDim2.new(0, 240, 0, 50)
+    right.BackgroundTransparency = 1
+    right.Parent = main
 
----------------------------------------------------------------------
--- TOGGLE
----------------------------------------------------------------------
-local ToggleBack = Instance.new("Frame", Left)
-ToggleBack.Size = UDim2.new(0, 42, 0, 22)
-ToggleBack.Position = UDim2.new(0, 15, 0, 45)
-ToggleBack.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    -- Headers
+    local header = Instance.new("Frame")
+    header.Size = UDim2.new(1, 0, 0, 30)
+    header.BackgroundTransparency = 1
+    header.Parent = right
 
-local ToggleBackCorner = Instance.new("UICorner", ToggleBack)
-ToggleBackCorner.CornerRadius = UDim.new(1, 0)
+    local petHeader = Instance.new("TextLabel")
+    petHeader.Size = UDim2.new(0.6, 0, 1, 0)
+    petHeader.BackgroundTransparency = 1
+    petHeader.Font = Enum.Font.GothamBold
+    petHeader.TextSize = 20
+    petHeader.TextColor3 = Color3.new(1, 1, 1)
+    petHeader.TextXAlignment = Enum.TextXAlignment.Left
+    petHeader.Text = "Pet Name"
+    petHeader.Parent = header
 
-local ToggleBall = Instance.new("Frame", ToggleBack)
-ToggleBall.Size = UDim2.new(0, 20, 0, 20)
-ToggleBall.Position = UDim2.new(0, 2, 0, 1)
-ToggleBall.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    local moneyHeader = Instance.new("TextLabel")
+    moneyHeader.Size = UDim2.new(0.4, 0, 1, 0)
+    moneyHeader.Position = UDim2.new(0.6, 0, 0, 0)
+    moneyHeader.BackgroundTransparency = 1
+    moneyHeader.Font = Enum.Font.GothamBold
+    moneyHeader.TextSize = 20
+    moneyHeader.TextColor3 = Color3.fromRGB(0, 255, 0)
+    moneyHeader.TextXAlignment = Enum.TextXAlignment.Right
+    moneyHeader.Text = "Money/Second"
+    moneyHeader.Parent = header
 
-local BallCorner = Instance.new("UICorner", ToggleBall)
-BallCorner.CornerRadius = UDim.new(1, 0)
+    -- Scroll
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, 0, 1, -35)
+    scroll.Position = UDim2.new(0, 0, 0, 35)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scroll.ScrollBarThickness = 5
+    scroll.BackgroundTransparency = 1
+    scroll.Parent = right
 
-local ToggleText = Instance.new("TextLabel", Left)
-ToggleText.Text = "Auto-Join"
-ToggleText.Position = UDim2.new(0, 65, 0, 43)
-ToggleText.Size = UDim2.new(0, 100, 0, 24)
-ToggleText.TextXAlignment = Enum.TextXAlignment.Left
-ToggleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleText.Font = Enum.Font.Gotham
-ToggleText.TextSize = 16
-ToggleText.BackgroundTransparency = 1
+    local list = Instance.new("UIListLayout")
+    list.Padding = UDim.new(0, 6)
+    list.Parent = scroll
 
-local AutoJoin = false
+    -- Function for adding items
+    function UI:AddPet(name, moneyPerSec)
+        local item = Instance.new("Frame")
+        item.Size = UDim2.new(1, -10, 0, 30)
+        item.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        item.BorderSizePixel = 0
+        item.Parent = scroll
 
-ToggleBack.InputBegan:Connect(function()
-    AutoJoin = not AutoJoin
+        Instance.new("UICorner", item).CornerRadius = UDim.new(0, 6)
 
-    if AutoJoin then
-        ToggleBack.BackgroundColor3 = Color3.fromRGB(0, 115, 255)
-        ToggleBall:TweenPosition(UDim2.new(1, -22, 0, 1), "Out", "Quad", 0.15)
-    else
-        ToggleBack.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        ToggleBall:TweenPosition(UDim2.new(0, 2, 0, 1), "Out", "Quad", 0.15)
+        local nameText = Instance.new("TextLabel")
+        nameText.Size = UDim2.new(0.6, 0, 1, 0)
+        nameText.BackgroundTransparency = 1
+        nameText.Font = Enum.Font.Gotham
+        nameText.TextSize = 18
+        nameText.TextColor3 = Color3.new(1, 1, 1)
+        nameText.TextXAlignment = Enum.TextXAlignment.Left
+        nameText.Text = name
+        nameText.Parent = item
+
+        local moneyText = Instance.new("TextLabel")
+        moneyText.Size = UDim2.new(0.4, 0, 1, 0)
+        moneyText.Position = UDim2.new(0.6, 0, 0, 0)
+        moneyText.BackgroundTransparency = 1
+        moneyText.Font = Enum.Font.GothamBold
+        moneyText.TextSize = 18
+        moneyText.TextColor3 = Color3.fromRGB(0, 255, 0)
+        moneyText.TextXAlignment = Enum.TextXAlignment.Right
+        moneyText.Text = tostring(moneyPerSec) .. "/s"
+        moneyText.Parent = item
     end
-end)
 
+    return UI
+end
 
----------------------------------------------------------------------
--- MINIMUM INPUT
----------------------------------------------------------------------
-local MinLabel = Instance.new("TextLabel", Left)
-MinLabel.Size = UDim2.new(1, -20, 0, 20)
-MinLabel.Position = UDim2.new(0, 10, 0, 85)
-MinLabel.Text = "Minimum per second:"
-MinLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinLabel.Font = Enum.Font.Gotham
-MinLabel.TextSize = 14
-MinLabel.BackgroundTransparency = 1
-
-local MinBox = Instance.new("TextBox", Left)
-MinBox.Size = UDim2.new(1, -20, 0, 30)
-MinBox.Position = UDim2.new(0, 10, 0, 110)
-MinBox.PlaceholderText = "0"
-MinBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-MinBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinBox.Font = Enum.Font.Gotham
-MinBox.TextSize = 14
-
-local MinCorner = Instance.new("UICorner", MinBox)
-MinCorner.CornerRadius = UDim.new(0, 6)
-
-
----------------------------------------------------------------------
--- IGNORE LIST DROPDOWN (searchable)
----------------------------------------------------------------------
-local IgnoreList = Instance.new("TextBox", Left)
-IgnoreList.Size = UDim2.new(1, -20, 0, 30)
-IgnoreList.Position = UDim2.new(0, 10, 0, 160)
-IgnoreList.PlaceholderText = "Search brainrots..."
-IgnoreList.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-IgnoreList.TextColor3 = Color3.fromRGB(255, 255, 255)
-IgnoreList.Font = Enum.Font.Gotham
-IgnoreList.TextSize = 14
-
-local IgnoreCorner = Instance.new("UICorner", IgnoreList)
-IgnoreCorner.CornerRadius = UDim.new(0, 6)
-
-
----------------------------------------------------------------------
--- RIGHT SIDE (BRAINROT LOGGING)
----------------------------------------------------------------------
-local Right = Instance.new("Frame", Main)
-Right.Size = UDim2.new(1, -175, 1, -44)
-Right.Position = UDim2.new(0, 175, 0, 44)
-Right.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-
-local RightCorner = Instance.new("UICorner", Right)
-RightCorner.CornerRadius = UDim.new(0, 8)
-
-local BrainLog = Instance.new("TextLabel", Right)
-BrainLog.Size = UDim2.new(1, -10, 1, -10)
-BrainLog.Position = UDim2.new(0, 5, 0, 5)
-BrainLog.Text = "Brainrots logged:\n"
-BrainLog.TextColor3 = Color3.fromRGB(255, 255, 255)
-BrainLog.BackgroundTransparency = 1
-BrainLog.TextXAlignment = Enum.TextXAlignment.Left
-BrainLog.TextYAlignment = Enum.TextYAlignment.Top
-BrainLog.Font = Enum.Font.Gotham
-BrainLog.TextSize = 15
-BrainLog.TextWrapped = true
-
-
----------------------------------------------------------------------
--- RECEIVE EVENTS
----------------------------------------------------------------------
-BrainrotEvent.OnClientEvent:Connect(function(data)
-    local name = data.name
-    local rarity = data.rarity
-
-    BrainLog.Text = BrainLog.Text .. ("\n• %s  |  %s"):format(name, rarity)
-end)
+-- Auto-create when loaded
+return UI:Create()
 
