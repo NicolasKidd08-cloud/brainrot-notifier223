@@ -1,4 +1,4 @@
--- Nick & Scrap’s Auto Jointer – FULL UI (fixed spacing, layout, open/close, visuals)
+-- Nick & Scrap’s Auto Jointer – FINAL (font sizes matched to screenshot)
 -- Place in StarterPlayerScripts or StarterGui as a LocalScript. UI-only, safe.
 
 local Players = game:GetService("Players")
@@ -55,26 +55,28 @@ Header.Parent = MainFrame
 local HeaderCorner = Instance.new("UICorner", Header)
 HeaderCorner.CornerRadius = UDim.new(0, 12)
 
--- Title (left)
+-- Title (left) - 20 px, Bold
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 360, 1, 0)
 Title.Position = UDim2.new(0, 14, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "Nick and Scrap's Auto Jointer"
 Title.Font = Enum.Font.GothamBold
-Title.TextScaled = true
+Title.TextScaled = false
+Title.TextSize = 20
 Title.TextColor3 = Color3.fromRGB(140, 255, 150)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
--- Discord (moved right)
+-- Discord (right) - 18 px
 local Discord = Instance.new("TextButton")
 Discord.Size = UDim2.new(0, 260, 1, 0)
 Discord.Position = UDim2.new(1, -360, 0, 0)
 Discord.BackgroundTransparency = 1
 Discord.Text = "discord.gg/pAgSFBKj"
 Discord.Font = Enum.Font.GothamBold
-Discord.TextScaled = true
+Discord.TextScaled = false
+Discord.TextSize = 18
 Discord.TextColor3 = Color3.fromRGB(120, 200, 255)
 Discord.Parent = Header
 
@@ -141,7 +143,8 @@ featuresLabel.Size = UDim2.new(1, 0, 1, 0)
 featuresLabel.BackgroundTransparency = 1
 featuresLabel.Text = "Features"
 featuresLabel.Font = Enum.Font.GothamBold
-featuresLabel.TextScaled = true
+featuresLabel.TextScaled = false
+featuresLabel.TextSize = 20
 featuresLabel.TextColor3 = Color3.fromRGB(245,245,245)
 featuresLabel.Parent = featuresHeader
 
@@ -151,7 +154,7 @@ buttonsFrame.Size = UDim2.new(1, 0, 0, 140)
 buttonsFrame.BackgroundTransparency = 1
 buttonsFrame.Parent = leftInner
 
--- Auto Join button
+-- Auto Join button - 18 px
 local AutoJoinBtn = Instance.new("TextButton")
 AutoJoinBtn.Size = UDim2.new(0.93, 0, 0, 46)
 AutoJoinBtn.Position = UDim2.new(0.035, 0, 0, 6)
@@ -159,7 +162,8 @@ AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(35, 150, 85) -- green
 AutoJoinBtn.TextColor3 = Color3.fromRGB(20,20,20)
 AutoJoinBtn.Text = "Auto Join"
 AutoJoinBtn.Font = Enum.Font.GothamBold
-AutoJoinBtn.TextScaled = true
+AutoJoinBtn.TextScaled = false
+AutoJoinBtn.TextSize = 18
 AutoJoinBtn.Parent = buttonsFrame
 local ajc = Instance.new("UICorner", AutoJoinBtn)
 ajc.CornerRadius = UDim.new(0, 8)
@@ -171,7 +175,7 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
 	-- no logic here, just UI
 end)
 
--- Persistent Rejoin button (separated)
+-- Persistent Rejoin button - 17 px
 local PersistentBtn = Instance.new("TextButton")
 PersistentBtn.Size = UDim2.new(0.93, 0, 0, 44)
 PersistentBtn.Position = UDim2.new(0.035, 0, 0, 64)
@@ -179,7 +183,8 @@ PersistentBtn.BackgroundColor3 = Color3.fromRGB(56, 58, 62) -- grey/dark
 PersistentBtn.TextColor3 = Color3.fromRGB(235,235,235)
 PersistentBtn.Text = "Persistent Rejoin"
 PersistentBtn.Font = Enum.Font.GothamBold
-PersistentBtn.TextScaled = true
+PersistentBtn.TextScaled = false
+PersistentBtn.TextSize = 17
 PersistentBtn.Parent = buttonsFrame
 local prc = Instance.new("UICorner", PersistentBtn)
 prc.CornerRadius = UDim.new(0, 8)
@@ -202,6 +207,7 @@ minLabel.Position = UDim2.new(0, 6, 0, 6)
 minLabel.BackgroundTransparency = 1
 minLabel.Text = "Minimum/sec (MS) (in Millions)"
 minLabel.Font = Enum.Font.Gotham
+minLabel.TextScaled = false
 minLabel.TextSize = 14
 minLabel.TextColor3 = Color3.fromRGB(200,200,200)
 minLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -213,6 +219,7 @@ minBox.Position = UDim2.new(0, 6, 0, 30)
 minBox.BackgroundColor3 = Color3.fromRGB(40,40,45)
 minBox.Text = "10"
 minBox.Font = Enum.Font.GothamBold
+minBox.TextScaled = false
 minBox.TextSize = 18
 minBox.TextColor3 = Color3.fromRGB(255,255,255)
 minBox.Parent = minContainer
@@ -226,7 +233,8 @@ Status.Position = UDim2.new(0, 12, 1, -34)
 Status.BackgroundTransparency = 1
 Status.Text = "Status: Idle"
 Status.Font = Enum.Font.Gotham
-Status.TextSize = 14
+Status.TextScaled = false
+Status.TextSize = 15
 Status.TextColor3 = Color3.fromRGB(170,170,170)
 Status.TextXAlignment = Enum.TextXAlignment.Left
 Status.Parent = LeftPanel
@@ -254,7 +262,8 @@ logsLabel.Position = UDim2.new(0, 16, 0, 0)
 logsLabel.BackgroundTransparency = 1
 logsLabel.Text = "Server Logs & Join List"
 logsLabel.Font = Enum.Font.GothamBold
-logsLabel.TextScaled = true
+logsLabel.TextScaled = false
+logsLabel.TextSize = 20
 logsLabel.TextColor3 = Color3.fromRGB(245,245,245)
 logsLabel.Parent = logsHeader
 
