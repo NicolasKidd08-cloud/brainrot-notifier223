@@ -1,122 +1,110 @@
--- ServerScriptService/RareBrainrotNotifier.lua
--- Publishes when a rare player joins, subscribes to cross-server alerts,
--- and handles teleport requests from clients.
+-- UI CREATED FOR YOUR GAME - SAFE VERSION
+-- Designer: ChatGPT
 
-local Players = game:GetService("Players")
-local MessagingService = game:GetService("MessagingService")
-local TeleportService = game:GetService("TeleportService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
+local ScreenGui = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer.PlayerGui)
+ScreenGui.Name = "BrainRotTrackerUI"
 
--- CONFIG
-local CHANNEL = "RARE_BRAINROT_ALERT_V1" -- MessagingService channel (unique string)
-local RARE_THRESHOLD = 5                 -- rarity value >= this is "rare"
-local TELEPORT_COOLDOWN = 6              -- seconds per player cooldown for teleport requests
+-- MAIN FRAME (TOP BAR)
+local TopBar = Instance.new("Frame", ScreenGui)
+TopBar.Size = UDim2.new(1, 0, 0, 45)
+TopBar.Position = UDim2.new(0, 0, 0, 0)
+TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TopBar.BorderSizePixel = 0
 
--- Ensure RemoteEvents exist
-local function getOrCreateRemote(name, class)
-    local obj = ReplicatedStorage:FindFirstChild(name)
-    if obj and obj:IsA(class) then return obj end
-    obj = Instance.new(class)
-    obj.Name = name
-    obj.Parent = ReplicatedStorage
-    return obj
-end
+local Title = Instance.new("TextLabel", TopBar)
+Title.Size = UDim2.new(0, 300, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Brainrot Notifier • Auto-Join"
+Title.Font = Enum.Font.GothamSemibold
+Title.TextSize = 20
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-local RemoteAlert = getOrCreateRemote("RareAlertEvent", "RemoteEvent")        -- server -> clients
-local RemoteRequestTeleport = getOrCreateRemote("RequestTeleportEvent", "RemoteEvent") -- client -> server
+local Discord = Instance.new("TextButton", TopBar)
+Discord.Size = UDim2.new(0, 200, 1, 0)
+Discord.Position = UDim2.new(1, -210, 0, 0)
+Discord.BackgroundTransparency = 1
+Discord.Text = "Join Discord: discord.gg/Kzzwxg89"
+Discord.Font = Enum.Font.GothamMedium
+Discord.TextSize = 16
+Discord.TextColor3 = Color3.fromRGB(85, 170, 255)
 
--- simple in-memory cooldown tracker for teleports per player
-local lastTeleportRequest = {}
-
--- Publish when a rare player joins THIS server
-Players.PlayerAdded:Connect(function(player)
-    -- Wait a bit for potential BrainrotRarity value (your game's system must set it on the Player object)
-    task.spawn(function()
-        task.wait(0.8) -- small delay to allow scripts to set player values
-        local rarityValue = player:FindFirstChild("BrainrotRarity")
-        if rarityValue and type(rarityValue.Value) == "number" and rarityValue.Value >= RARE_THRESHOLD then
-            local payload = {
-                name = player.Name,
-                userId = player.UserId,
-                rarity = rarityValue.Value,
-                placeId = game.PlaceId,
-                jobId = tostring(game.JobId), -- jobId identifies this server instance
-                timestamp = os.time(),
-            }
-            -- Publish cross-server message
-            local ok, err = pcall(function()
-                MessagingService:PublishAsync(CHANNEL, payload)
-            end)
-            if not ok then
-                warn("Failed to publish rare alert:", err)
-            else
-                print(("Published rare alert for %s (rarity=%s) from job %s"):format(player.Name, tostring(rarityValue.Value), payload.jobId))
-            end
-        end
-    end)
+Discord.MouseButton1Click:Connect(function()
+    setclipboard("https://discord.gg/Kzzwxg89")
 end)
 
--- Subscribe to incoming rare alerts from other servers (and our own too)
-local function onMessage(received)
-    -- received.Data should be the payload
-    local payload = received and received.Data
-    if type(payload) ~= "table" then return end
+-- SETTINGS PANEL
+local Settings = Instance.new("Frame", ScreenGui)
+Settings.Size = UDim2.new(0, 350, 0, 360)
+Settings.Position = UDim2.new(0, 20, 0, 60)
+Settings.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+Settings.Visible = false
+Settings.BorderSizePixel = 0
 
-    -- If the alert came from THIS server, it's still fine to forward locally (helps local players)
-    -- Forward to all players or to admins only — we'll send to players and client will filter by admin list if needed
-    RemoteAlert:FireAllClients(payload)
-    print(("Received rare alert: %s (rarity=%s) from job %s"):format(tostring(payload.name), tostring(payload.rarity), tostring(payload.jobId)))
-end
+local SettingsTitle = Instance.new("TextLabel", Settings)
+SettingsTitle.Size = UDim2.new(1, 0, 0, 40)
+SettingsTitle.BackgroundTransparency = 1
+SettingsTitle.Text = "Settings"
+SettingsTitle.Font = Enum.Font.GothamSemibold
+SettingsTitle.TextSize = 22
+SettingsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-local ok, err = pcall(function()
-    -- SubscribeAsync returns a subscription object on success
-    MessagingService:SubscribeAsync(CHANNEL, onMessage)
+-- MONEY MIN/MAX (SLIDERS SIMPLIFIED)
+local MinLabel = Instance.new("TextLabel", Settings)
+MinLabel.Position = UDim2.new(0, 10, 0, 60)
+MinLabel.Size = UDim2.new(1, -20, 0, 30)
+MinLabel.BackgroundTransparency = 1
+MinLabel.Text = "Min Money Per Sec:"
+MinLabel.TextColor3 = Color3.new(1, 1, 1)
+MinLabel.TextSize = 18
+MinLabel.Font = Enum.Font.Gotham
+
+local MinBox = Instance.new("TextBox", Settings)
+MinBox.Position = UDim2.new(0, 10, 0, 95)
+MinBox.Size = UDim2.new(1, -20, 0, 35)
+MinBox.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+MinBox.Text = "0"
+MinBox.Font = Enum.Font.Gotham
+MinBox.TextSize = 18
+MinBox.TextColor3 = Color3.new(1, 1, 1)
+
+local MaxLabel = MinLabel:Clone()
+MaxLabel.Parent = Settings
+MaxLabel.Position = UDim2.new(0, 10, 0, 140)
+MaxLabel.Text = "Max Money Per Sec:"
+
+local MaxBox = MinBox:Clone()
+MaxBox.Parent = Settings
+MaxBox.Position = UDim2.new(0, 10, 0, 175)
+MaxBox.Text = "1000"
+
+-- COLOR PICKER (SIMPLE)
+local ColorButton = Instance.new("TextButton", Settings)
+ColorButton.Size = UDim2.new(1, -20, 0, 40)
+ColorButton.Position = UDim2.new(0, 10, 0, 230)
+ColorButton.Text = "Pick UI Color"
+ColorButton.Font = Enum.Font.Gotham
+ColorButton.TextSize = 18
+ColorButton.TextColor3 = Color3.fromRGB(255,255,255)
+ColorButton.BackgroundColor3 = Color3.fromRGB(55,55,60)
+
+ColorButton.MouseButton1Click:Connect(function()
+    TopBar.BackgroundColor3 = Color3.fromRGB(math.random(40,255), math.random(40,255), math.random(40,255))
 end)
-if not ok then
-    warn("Failed to subscribe to MessagingService channel:", err)
-end
 
--- Handle teleport requests from clients
-RemoteRequestTeleport.OnServerEvent:Connect(function(player, request)
-    -- request should be a table { jobId = "...", placeId = <number>, requestedFor = player.UserId (optional) }
-    if type(request) ~= "table" or type(request.jobId) ~= "string" then
-        RemoteAlert:FireClient(player, { error = "Invalid teleport request." })
-        return
-    end
+-- OPEN SETTINGS BUTTON
+local SettingsBtn = Instance.new("TextButton", TopBar)
+SettingsBtn.Size = UDim2.new(0, 100, 1, 0)
+SettingsBtn.Position = UDim2.new(0, 320, 0, 0)
+SettingsBtn.BackgroundTransparency = 1
+SettingsBtn.Text = "⚙ Settings"
+SettingsBtn.Font = Enum.Font.GothamMedium
+SettingsBtn.TextSize = 18
+SettingsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-    -- Basic cooldown: prevent spamming teleport calls
-    local last = lastTeleportRequest[player.UserId]
-    if last and tick() - last < TELEPORT_COOLDOWN then
-        RemoteAlert:FireClient(player, { error = ("Please wait %.1f seconds before teleporting again."):format(TELEPORT_COOLDOWN - (tick()-last)) })
-        return
-    end
-    lastTeleportRequest[player.UserId] = tick()
-
-    local targetJobId = request.jobId
-    local targetPlaceId = request.placeId or game.PlaceId
-
-    -- Don't teleport to the server you're already in
-    if tostring(game.JobId) == tostring(targetJobId) then
-        RemoteAlert:FireClient(player, { error = "You are already in that server." })
-        return
-    end
-
-    -- Attempt to teleport this player to the target server instance
-    task.spawn(function()
-        local success, err = pcall(function()
-            -- TeleportToPlaceInstance teleports the given players to a specific server instance
-            TeleportService:TeleportToPlaceInstance(targetPlaceId, targetJobId, { player })
-        end)
-        if not success then
-            warn("Teleport error for player", player.Name, err)
-            -- notify client of failure
-            RemoteAlert:FireClient(player, { error = "Teleport failed: "..tostring(err) })
-        end
-    end)
+SettingsBtn.MouseButton1Click:Connect(function()
+    Settings.Visible = not Settings.Visible
 end)
-
-print("RareBrainrotNotifier server script running (subscribed to "..CHANNEL..")")
 
 
 
