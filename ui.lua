@@ -1,20 +1,23 @@
--- Nicholas's AJ — Full UI (LocalScript)
--- Place in StarterPlayer -> StarterPlayerScripts
--- Safe: UI only. Client signals join intent via RemoteEvent; server must implement teleport/validation.
+-- ui.lua
+-- Nicolas's AJ — Luamor Classic style (Safe UI only)
+-- Place as a LocalScript in StarterPlayer > StarterPlayerScripts (or use the loadstring loader)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- RemoteEvent names (server can create these if desired)
-local REMOTE_ADD = "NicholasAJ_AddEntry"      -- server -> client to add an entry {id,name,money}
-local REMOTE_REMOVE = "NicholasAJ_RemoveEntry" -- server -> client to remove an entry {id}
-local REMOTE_REQUEST = "NicholasAJ_RequestJoin" -- client -> server to request join {id, name, money}
+-- RemoteEvent names (server can create/listen to these)
+local REMOTE_ADD = "NicholasAJ_AddEntry"
+local REMOTE_REMOVE = "NicholasAJ_RemoveEntry"
+local REMOTE_REQUEST = "NicholasAJ_RequestJoin"
 
--- Ensure RemoteEvents exist (server may also create them)
-local function getOrCreateRemote(name)
+-- helper: ensure RemoteEvent exists (server may also set these up)
+local function ensureRemote(name)
     local obj = ReplicatedStorage:FindFirstChild(name)
     if obj and obj:IsA("RemoteEvent") then return obj end
     obj = Instance.new("RemoteEvent")
@@ -22,24 +25,26 @@ local function getOrCreateRemote(name)
     obj.Parent = ReplicatedStorage
     return obj
 end
-local remoteAdd = getOrCreateRemote(REMOTE_ADD)
-local remoteRemove = getOrCreateRemote(REMOTE_REMOVE)
-local remoteRequest = getOrCreateRemote(REMOTE_REQUEST)
 
--- Utilities for attributes (persistent across respawns)
-local function setAttr(k, v) if player:GetAttribute(k) ~= v then player:SetAttribute(k, v) end end
-local function getAttr(k, fallback) local v = player:GetAttribute(k) if v == nil then return fallback end return v end
+local remoteAdd = ensureRemote(REMOTE_ADD)
+local remoteRemove = ensureRemote(REMOTE_REMOVE)
+local remoteRequest = ensureRemote(REMOTE_REQUEST)
 
--- Defaults
+-- attribute helpers (persist across respawns)
+local function setAttr(k,v) if player:GetAttribute(k) ~= v then player:SetAttribute(k,v) end end
+local function getAttr(k,def) local v=player:GetAttribute(k) if v==nil then return def end return v end
+
+-- defaults
 if getAttr("NAJ.MinPerSec", nil) == nil then setAttr("NAJ.MinPerSec", 0) end
 if getAttr("NAJ.AutoJoin", nil) == nil then setAttr("NAJ.AutoJoin", false) end
+if getAttr("NAJ.IgnoreList", nil) == nil then setAttr("NAJ.IgnoreList", "") end
 if getAttr("NAJ.ThemeR", nil) == nil then
     local d = Color3.fromRGB(34, 106, 255)
     setAttr("NAJ.ThemeR", d.R); setAttr("NAJ.ThemeG", d.G); setAttr("NAJ.ThemeB", d.B)
 end
 
--- Create ScreenGui (reuse if exists)
-local GUI_NAME = "NicholasAJ_GUI_v1"
+-- create/reuse ScreenGui
+local GUI_NAME = "NicholasAJ_UI_v2"
 local screenGui = playerGui:FindFirstChild(GUI_NAME)
 if screenGui and screenGui:IsA("ScreenGui") then
     -- reuse
@@ -47,265 +52,265 @@ else
     screenGui = Instance.new("ScreenGui")
     screenGui.Name = GUI_NAME
     screenGui.Parent = playerGui
-    screenGui.ResetOnSpawn = false -- persist after death
+    screenGui.ResetOnSpawn = false -- persists after death
     screenGui.IgnoreGuiInset = true
 end
 
--- Clear previous children to avoid duplicates on script re-run
+-- clean children to avoid duplicates on re-run
 for _,c in ipairs(screenGui:GetChildren()) do c:Destroy() end
 
--- Theme
-local function currentTheme() return Color3.new(getAttr("NAJ.ThemeR", 34), getAttr("NAJ.ThemeG", 106), getAttr("NAJ.ThemeB", 255)) end
+-- layout constants for "Luamor Classic" style
+local WIDTH, HEIGHT = 600, 360 -- chosen classic proportions
+local LEFT_W = 220
+local PADDING = 12
 
--- ====== MAIN PANEL ======
-local MAIN_W, MAIN_H = 880, 420
-local main = Instance.new("Frame"); main.Name = "Main"; main.Size = UDim2.fromOffset(MAIN_W, MAIN_H)
-main.Position = UDim2.new(0.5, -MAIN_W/2, 0.08, 0)
-main.AnchorPoint = Vector2.new(0.5, 0)
-main.BackgroundColor3 = Color3.fromRGB(18, 22, 30)
+local function themeColor()
+    local r = getAttr("NAJ.ThemeR", 34)
+    local g = getAttr("NAJ.ThemeG", 106)
+    local b = getAttr("NAJ.ThemeB", 255)
+    return Color3.new(r, g, b)
+end
+
+-- Main container
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.fromOffset(WIDTH, HEIGHT)
+main.Position = UDim2.new(0.5, -WIDTH/2, 0.08, 0)
+main.AnchorPoint = Vector2.new(0.5,0)
+main.BackgroundColor3 = Color3.fromRGB(18,20,26)
 main.BorderSizePixel = 0
 main.Parent = screenGui
-local mainCorner = Instance.new("UICorner", main); mainCorner.CornerRadius = UDim.new(0, 14)
+local mainCorner = Instance.new("UICorner", main); mainCorner.CornerRadius = UDim.new(0, 12)
 main.ClipsDescendants = true
 
--- Animated rainbow outline via UIStroke (tweening its Color)
-local outline = Instance.new("UIStroke", main)
-outline.Thickness = 2
-outline.Transparency = 0
-outline.LineJoinMode = Enum.LineJoinMode.Round
-
--- animate rainbow (loop)
+-- Animated rainbow outline
+local stroke = Instance.new("UIStroke", main)
+stroke.Thickness = 2
+stroke.LineJoinMode = Enum.LineJoinMode.Round
 spawn(function()
     local hue = 0
     while main.Parent do
-        hue = (hue + 0.008) % 1
-        local col = Color3.fromHSV(hue, 0.85, 0.95)
-        outline.Color = col
+        hue = (hue + 0.006) % 1
+        stroke.Color = Color3.fromHSV(hue, 0.85, 0.95)
         task.wait(0.02)
     end
 end)
 
--- Topbar (draggable)
-local topbar = Instance.new("Frame", main)
-topbar.Name = "Topbar"; topbar.Size = UDim2.new(1, 0, 0, 70); topbar.Position = UDim2.new(0,0,0,0)
-topbar.BackgroundTransparency = 1
-local topCorner = Instance.new("UICorner", topbar); topCorner.CornerRadius = UDim.new(0, 14)
+-- TOP BAR (header)
+local top = Instance.new("Frame", main)
+top.Name = "Top"
+top.Size = UDim2.new(1,0,0,72)
+top.Position = UDim2.new(0,0,0,0)
+top.BackgroundColor3 = themeColor()
+top.BorderSizePixel = 0
+local topCorner = Instance.new("UICorner", top); topCorner.CornerRadius = UDim.new(0, 12)
 
--- Left: small title (Nicolas's Autojoiner) and minimize button
-local title = Instance.new("TextLabel", topbar)
-title.Name = "Title"; title.Size = UDim2.new(0, 280, 1, 0); title.Position = UDim2.new(0, 14, 0, 0)
+-- Title (top-left) "Nicolas's Autojoiner"
+local title = Instance.new("TextLabel", top)
+title.Name = "Title"
+title.Size = UDim2.new(0, 280, 1, 0)
+title.Position = UDim2.new(0, PADDING/2, 0, 0)
 title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold; title.TextSize = 20
-title.TextColor3 = Color3.fromRGB(230,230,230); title.TextXAlignment = Enum.TextXAlignment.Left
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(245,245,245)
+title.TextXAlignment = Enum.TextXAlignment.Left
 title.Text = "Nicolas's Autojoiner"
 
-local minimizeBtn = Instance.new("TextButton", topbar)
-minimizeBtn.Name = "Minimize"; minimizeBtn.Size = UDim2.new(0, 34, 0, 34)
-minimizeBtn.Position = UDim2.new(0, 300, 0, 18)
-minimizeBtn.AnchorPoint = Vector2.new(0,0)
-minimizeBtn.Text = "-"
-minimizeBtn.Font = Enum.Font.GothamBold; minimizeBtn.TextSize = 24
-minimizeBtn.TextColor3 = Color3.fromRGB(220,220,220)
-minimizeBtn.BackgroundColor3 = Color3.fromRGB(38, 44, 56)
-minimizeBtn.BorderSizePixel = 0
-local minCorner = Instance.new("UICorner", minimizeBtn); minCorner.CornerRadius = UDim.new(0,8)
-
--- Center: Big Discord link (centered)
-local discord = Instance.new("TextButton", topbar)
+-- Discord under the title (top-left, smaller)
+local discord = Instance.new("TextButton", top)
 discord.Name = "Discord"
-discord.Size = UDim2.new(0, 520, 0, 46)
-discord.Position = UDim2.new(0.5, -260, 0.5, -23)
-discord.AnchorPoint = Vector2.new(0.5, 0.5)
-discord.Text = "JOIN DISCORD • discord.gg/Kzzwxg89"
-discord.Font = Enum.Font.GothamBold; discord.TextSize = 20
-discord.TextColor3 = Color3.fromRGB(150,210,255)
+discord.Size = UDim2.new(0, 260, 0, 20)
+discord.Position = UDim2.new(0, PADDING/2, 0, 36)
 discord.BackgroundTransparency = 1
-discord.TextWrapped = true
-
+discord.Font = Enum.Font.Gotham
+discord.TextSize = 14
+discord.TextColor3 = Color3.fromRGB(230,240,255)
+discord.TextXAlignment = Enum.TextXAlignment.Left
+discord.Text = "discord.gg/Kzzwxg89"
+discord.AutoButtonColor = false
 discord.MouseButton1Click:Connect(function()
     pcall(function() setclipboard("https://discord.gg/Kzzwxg89") end)
-    -- small visual feedback
-    local prev = title.Text
-    title.Text = "Discord link copied!"
-    delay(1.5, function() if title then title.Text = prev end end)
+    title.Text = "Discord copied!"
+    delay(1.2, function() if title then title.Text = "Nicolas's Autojoiner" end end)
 end)
 
--- Right: controls area (AutoJoin status)
-local rightBox = Instance.new("Frame", topbar)
-rightBox.Size = UDim2.new(0, 230, 1, 0); rightBox.Position = UDim2.new(1, -246, 0, 0)
-rightBox.BackgroundTransparency = 1
+-- Minimize (minus) button (top left area)
+local minBtn = Instance.new("TextButton", top)
+minBtn.Name = "MinBtn"
+minBtn.Size = UDim2.new(0, 28, 0, 28)
+minBtn.Position = UDim2.new(1, -38, 0, 18)
+minBtn.AnchorPoint = Vector2.new(0,0)
+minBtn.Text = "-"
+minBtn.Font = Enum.Font.GothamBold
+minBtn.TextSize = 20
+minBtn.TextColor3 = Color3.fromRGB(240,240,240)
+minBtn.BackgroundColor3 = Color3.fromRGB(34,34,40)
+minBtn.BorderSizePixel = 0
+local minCorner = Instance.new("UICorner", minBtn); minCorner.CornerRadius = UDim.new(0,6)
 
-local statusLabel = Instance.new("TextLabel", rightBox)
-statusLabel.Size = UDim2.new(1, -12, 0, 26); statusLabel.Position = UDim2.new(0, 6, 0, 12)
-statusLabel.BackgroundTransparency = 1
-statusLabel.Font = Enum.Font.Gotham; statusLabel.TextSize = 14
-statusLabel.TextColor3 = Color3.fromRGB(200,200,200); statusLabel.TextXAlignment = Enum.TextXAlignment.Right
-statusLabel.Text = "Status: Idle"
+-- Yellow divider under the top bar
+local divTop = Instance.new("Frame", main)
+divTop.Size = UDim2.new(1, 0, 0, 4)
+divTop.Position = UDim2.new(0, 0, 0, 72)
+divTop.BackgroundColor3 = Color3.fromRGB(246, 196, 0) -- yellow
+divTop.BorderSizePixel = 0
 
--- ===== LEFT PANEL (features) =====
-local leftW = 260
-local leftPanel = Instance.new("Frame", main)
-leftPanel.Name = "LeftPanel"; leftPanel.Size = UDim2.new(0, leftW, 1, -70); leftPanel.Position = UDim2.new(0, 0, 0, 70)
-leftPanel.BackgroundColor3 = Color3.fromRGB(20,22,26); leftPanel.BorderSizePixel = 0
-local leftCorner = Instance.new("UICorner", leftPanel); leftCorner.CornerRadius = UDim.new(0,12)
+-- LEFT PANEL (features)
+local left = Instance.new("Frame", main)
+left.Name = "Left"
+left.Size = UDim2.new(0, LEFT_W, 1, -76)
+left.Position = UDim2.new(0, PADDING, 0, 76 + PADDING/2)
+left.BackgroundColor3 = Color3.fromRGB(22,24,28)
+left.BorderSizePixel = 0
+local leftCorner = Instance.new("UICorner", left); leftCorner.CornerRadius = UDim.new(0, 10)
 
-local leftTitle = Instance.new("TextLabel", leftPanel)
-leftTitle.Size = UDim2.new(1, -20, 0, 28); leftTitle.Position = UDim2.new(0, 10, 0, 12)
-leftTitle.BackgroundTransparency = 1; leftTitle.Font = Enum.Font.GothamBold; leftTitle.TextSize = 16
-leftTitle.TextColor3 = Color3.fromRGB(230,230,230); leftTitle.Text = "Features"
+-- vertical yellow divider between left and right content
+local sep = Instance.new("Frame", main)
+sep.Size = UDim2.new(0, 4, 1, -100)
+sep.Position = UDim2.new(0, LEFT_W + (PADDING*1.5), 0, 76 + (PADDING/2))
+sep.BackgroundColor3 = Color3.fromRGB(246,196,0)
+sep.BorderSizePixel = 0
 
--- AutoJoin toggle
-local autoLabel = Instance.new("TextLabel", leftPanel)
-autoLabel.Size = UDim2.new(1, -20, 0, 22); autoLabel.Position = UDim2.new(0, 10, 0, 52)
-autoLabel.BackgroundTransparency = 1; autoLabel.Font = Enum.Font.Gotham; autoLabel.TextSize = 14
-autoLabel.TextColor3 = Color3.fromRGB(200,200,200); autoLabel.Text = "AutoJoin"
+-- LEFT content title
+local leftTitle = Instance.new("TextLabel", left)
+leftTitle.Size = UDim2.new(1, -24, 0, 26)
+leftTitle.Position = UDim2.new(0, 12, 0, 8)
+leftTitle.BackgroundTransparency = 1
+leftTitle.Font = Enum.Font.GothamBold
+leftTitle.TextSize = 16
+leftTitle.TextColor3 = Color3.fromRGB(230,230,230)
+leftTitle.Text = "Features"
 
-local autoToggle = Instance.new("TextButton", leftPanel)
-autoToggle.Size = UDim2.new(0, 52, 0, 28); autoToggle.Position = UDim2.new(1, -68, 0, 50)
-autoToggle.AnchorPoint = Vector2.new(0,0)
+-- AutoJoin row
+local autoLbl = Instance.new("TextLabel", left)
+autoLbl.Size = UDim2.new(1, -24, 0, 22); autoLbl.Position = UDim2.new(0, 12, 0, 44)
+autoLbl.BackgroundTransparency = 1; autoLbl.Font = Enum.Font.Gotham; autoLbl.TextSize = 14
+autoLbl.TextColor3 = Color3.fromRGB(210,210,210); autoLbl.Text = "AutoJoin"
+
+local autoToggle = Instance.new("TextButton", left)
+autoToggle.Size = UDim2.new(0, 64, 0, 28); autoToggle.Position = UDim2.new(1, -76, 0, 40)
 autoToggle.Text = getAttr("NAJ.AutoJoin", false) and "ON" or "OFF"
 autoToggle.Font = Enum.Font.GothamBold; autoToggle.TextSize = 14
-autoToggle.BackgroundColor3 = getAttr("NAJ.AutoJoin", false) and Color3.fromRGB(80,170,80) or Color3.fromRGB(60,60,64)
-local autoCorner2 = Instance.new("UICorner", autoToggle); autoCorner2.CornerRadius = UDim.new(0,6)
+autoToggle.BackgroundColor3 = getAttr("NAJ.AutoJoin", false) and Color3.fromRGB(80,180,80) or Color3.fromRGB(64,64,68)
+autoToggle.TextColor3 = Color3.fromRGB(255,255,255)
+autoToggle.BorderSizePixel = 0
+local autoCorner = Instance.new("UICorner", autoToggle); autoCorner.CornerRadius = UDim.new(0,6)
 
--- Min per sec input
-local minLabel = Instance.new("TextLabel", leftPanel)
-minLabel.Size = UDim2.new(1, -20, 0, 22); minLabel.Position = UDim2.new(0, 10, 0, 92)
-minLabel.BackgroundTransparency = 1; minLabel.Font = Enum.Font.Gotham; minLabel.TextSize = 14
-minLabel.TextColor3 = Color3.fromRGB(200,200,200); minLabel.Text = "Min Money / sec"
+-- Min per sec UI
+local minLbl = Instance.new("TextLabel", left)
+minLbl.Size = UDim2.new(1, -24, 0, 22); minLbl.Position = UDim2.new(0, 12, 0, 84)
+minLbl.BackgroundTransparency = 1; minLbl.Font = Enum.Font.Gotham; minLbl.TextSize = 14
+minLbl.TextColor3 = Color3.fromRGB(210,210,210); minLbl.Text = "Min Money / sec"
 
-local minBox = Instance.new("TextBox", leftPanel)
-minBox.Size = UDim2.new(1, -20, 0, 34); minBox.Position = UDim2.new(0, 10, 0, 118)
-minBox.BackgroundColor3 = Color3.fromRGB(40,44,52); minBox.TextColor3 = Color3.fromRGB(220,220,220)
+local minBox = Instance.new("TextBox", left)
+minBox.Size = UDim2.new(1, -24, 0, 34); minBox.Position = UDim2.new(0, 12, 0, 110)
+minBox.BackgroundColor3 = Color3.fromRGB(34,36,40); minBox.TextColor3 = Color3.fromRGB(220,220,220)
 minBox.Text = tostring(getAttr("NAJ.MinPerSec", 0)); minBox.Font = Enum.Font.Gotham; minBox.TextSize = 16
 local minCorner2 = Instance.new("UICorner", minBox); minCorner2.CornerRadius = UDim.new(0,8)
 
--- Ignore list input + add
-local ignLabel = Instance.new("TextLabel", leftPanel)
-ignLabel.Size = UDim2.new(1, -20, 0, 22); ignLabel.Position = UDim2.new(0, 10, 0, 166)
-ignLabel.BackgroundTransparency = 1; ignLabel.Font = Enum.Font.Gotham; ignLabel.TextSize = 14
-ignLabel.TextColor3 = Color3.fromRGB(200,200,200); ignLabel.Text = "Ignore list (comma-separated names or ids)"
+-- Ignore list inputs
+local ignLbl = Instance.new("TextLabel", left)
+ignLbl.Size = UDim2.new(1, -24, 0, 22); ignLbl.Position = UDim2.new(0, 12, 0, 158)
+ignLbl.BackgroundTransparency = 1; ignLbl.Font = Enum.Font.Gotham; ignLbl.TextSize = 14
+ignLbl.TextColor3 = Color3.fromRGB(210,210,210); ignLbl.Text = "Ignore list (comma separated)"
 
-local ignBox = Instance.new("TextBox", leftPanel)
-ignBox.Size = UDim2.new(1, -20, 0, 34); ignBox.Position = UDim2.new(0, 10, 0, 194)
-ignBox.BackgroundColor3 = Color3.fromRGB(40,44,52); ignBox.TextColor3 = Color3.fromRGB(220,220,220)
-ignBox.Text = "" ; ignBox.Font = Enum.Font.Gotham; ignBox.TextSize = 16
-local ignCorner = Instance.new("UICorner", ignBox); ignCorner.CornerRadius = UDim.new(0,8)
+local ignBox = Instance.new("TextBox", left)
+ignBox.Size = UDim2.new(1, -24, 0, 34); ignBox.Position = UDim2.new(0, 12, 0, 186)
+ignBox.BackgroundColor3 = Color3.fromRGB(34,36,40); ignBox.TextColor3 = Color3.fromRGB(220,220,220)
+ignBox.Text = "" ; ignBox.Font = Enum.Font.Gotham; ignBox.TextSize = 14
+local ignCorner2 = Instance.new("UICorner", ignBox); ignCorner2.CornerRadius = UDim.new(0,8)
 
-local addIgnBtn = Instance.new("TextButton", leftPanel)
-addIgnBtn.Size = UDim2.new(0, 120, 0, 34); addIgnBtn.Position = UDim2.new(0, 10, 1, -54)
-addIgnBtn.Text = "Add Ignore"; addIgnBtn.Font = Enum.Font.GothamBold; addIgnBtn.TextSize = 14
-addIgnBtn.BackgroundColor3 = Color3.fromRGB(75,130,220); addIgnBtn.TextColor3 = Color3.fromRGB(255,255,255)
-local addIgnCorner = Instance.new("UICorner", addIgnBtn); addIgnCorner.CornerRadius = UDim.new(0,8)
+local addIgn = Instance.new("TextButton", left)
+addIgn.Size = UDim2.new(0, 96, 0, 32); addIgn.Position = UDim2.new(0, 12, 1, -44)
+addIgn.Text = "Add Ignore"; addIgn.Font = Enum.Font.GothamBold; addIgn.TextSize = 14
+addIgn.BackgroundColor3 = Color3.fromRGB(70,120,215); addIgn.TextColor3 = Color3.fromRGB(255,255,255); addIgn.BorderSizePixel = 0
+local addCorner = Instance.new("UICorner", addIgn); addCorner.CornerRadius = UDim.new(0,8)
 
-local clearIgnBtn = Instance.new("TextButton", leftPanel)
-clearIgnBtn.Size = UDim2.new(0, 120, 0, 34); clearIgnBtn.Position = UDim2.new(1, -130, 1, -54)
-clearIgnBtn.AnchorPoint = Vector2.new(0,0); clearIgnBtn.Text = "Clear List"; clearIgnBtn.Font = Enum.Font.GothamBold
-clearIgnBtn.TextSize = 14; clearIgnBtn.BackgroundColor3 = Color3.fromRGB(65,65,70); clearIgnBtn.TextColor3 = Color3.fromRGB(255,255,255)
-local clearIgnCorner = Instance.new("UICorner", clearIgnBtn); clearIgnCorner.CornerRadius = UDim.new(0,8)
+local clearIgn = Instance.new("TextButton", left)
+clearIgn.Size = UDim2.new(0, 96, 0, 32); clearIgn.Position = UDim2.new(1, -108, 1, -44)
+clearIgn.Text = "Clear List"; clearIgn.Font = Enum.Font.GothamBold; clearIgn.TextSize = 14
+clearIgn.BackgroundColor3 = Color3.fromRGB(60,60,64); clearIgn.TextColor3 = Color3.fromRGB(255,255,255); clearIgn.BorderSizePixel = 0
+local clearCorner = Instance.new("UICorner", clearIgn); clearCorner.CornerRadius = UDim.new(0,8)
 
--- Ignore list UI (scroll)
-local ignLabel2 = Instance.new("TextLabel", leftPanel)
-ignLabel2.Size = UDim2.new(1, -20, 0, 22); ignLabel2.Position = UDim2.new(0, 10, 0, 236)
-ignLabel2.BackgroundTransparency = 1; ignLabel2.Font = Enum.Font.Gotham; ignLabel2.TextSize = 14
-ignLabel2.TextColor3 = Color3.fromRGB(180,180,180); ignLabel2.Text = "Current Ignore List:"
+-- ignore list scroll
+local ignLabel2 = Instance.new("TextLabel", left)
+ignLabel2.Size = UDim2.new(1, -24, 0, 18); ignLabel2.Position = UDim2.new(0, 12, 0, 230)
+ignLabel2.BackgroundTransparency = 1; ignLabel2.Font = Enum.Font.Gotham; ignLabel2.TextSize = 13
+ignLabel2.TextColor3 = Color3.fromRGB(200,200,200); ignLabel2.Text = "Current ignores:"
 
-local ignScroll = Instance.new("ScrollingFrame", leftPanel)
-ignScroll.Size = UDim2.new(1, -20, 0, 86); ignScroll.Position = UDim2.new(0, 10, 0, 262)
-ignScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-ignScroll.ScrollBarThickness = 6
-ignScroll.BackgroundTransparency = 1
-local ignLayout = Instance.new("UIListLayout", ignScroll)
-ignLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ignLayout.Padding = UDim.new(0,6)
+local ignScroll = Instance.new("ScrollingFrame", left)
+ignScroll.Size = UDim2.new(1, -24, 0, 86); ignScroll.Position = UDim2.new(0, 12, 0, 250)
+ignScroll.BackgroundTransparency = 1; ignScroll.ScrollBarThickness = 6
+local ignLayout = Instance.new("UIListLayout", ignScroll); ignLayout.Padding = UDim.new(0,6); ignLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- ===== RIGHT PANEL (live list with columns) =====
-local rightPanel = Instance.new("Frame", main)
-rightPanel.Size = UDim2.new(1, -leftW - 32, 1, -90)
-rightPanel.Position = UDim2.new(0, leftW + 16, 0, 74)
-rightPanel.BackgroundTransparency = 1
+-- RIGHT PANEL (live entries)
+local right = Instance.new("Frame", main)
+right.Name = "Right"
+right.Size = UDim2.new(1, -LEFT_W - (PADDING*3) - 8, 1, -92)
+right.Position = UDim2.new(0, LEFT_W + (PADDING*2) + 4, 0, 76 + (PADDING/2))
+right.BackgroundTransparency = 1
 
-local columns = Instance.new("Frame", rightPanel)
-columns.Size = UDim2.new(1, 0, 0, 28)
-columns.Position = UDim2.new(0, 0, 0, 0)
-columns.BackgroundTransparency = 1
+-- columns header
+local headerFrame = Instance.new("Frame", right)
+headerFrame.Size = UDim2.new(1, 0, 0, 28)
+headerFrame.Position = UDim2.new(0, 0, 0, 0)
+headerFrame.BackgroundTransparency = 1
 
-local colName = Instance.new("TextLabel", columns)
-colName.Size = UDim2.new(0.6, -6, 1, 0); colName.Position = UDim2.new(0, 6, 0, 0)
-colName.BackgroundTransparency = 1; colName.Font = Enum.Font.GothamBold; colName.TextSize = 14
-colName.Text = "Brainrot"; colName.TextColor3 = Color3.fromRGB(210,210,210); colName.TextXAlignment = Enum.TextXAlignment.Left
+local hName = Instance.new("TextLabel", headerFrame)
+hName.Size = UDim2.new(0.6, -8, 1, 0); hName.Position = UDim2.new(0, 8, 0, 0)
+hName.BackgroundTransparency = 1; hName.Font = Enum.Font.GothamBold; hName.TextSize = 14
+hName.Text = "Brainrot"; hName.TextColor3 = Color3.fromRGB(220,220,220); hName.TextXAlignment = Enum.TextXAlignment.Left
 
-local colMoney = colName:Clone(); colMoney.Parent = columns
-colMoney.Size = UDim2.new(0.4, -6, 1, 0); colMoney.Position = UDim2.new(0.6, 6, 0, 0)
-colMoney.Text = "Money / sec"; colMoney.TextXAlignment = Enum.TextXAlignment.Right
+local hMoney = hName:Clone(); hMoney.Parent = headerFrame
+hMoney.Size = UDim2.new(0.4, -8, 1, 0); hMoney.Position = UDim2.new(0.6, 8, 0, 0)
+hMoney.Text = "Money / sec"; hMoney.TextXAlignment = Enum.TextXAlignment.Right
 
--- scrolling frame for entries
-local listFrame = Instance.new("ScrollingFrame", rightPanel)
-listFrame.Size = UDim2.new(1, 0, 1, -28)
-listFrame.Position = UDim2.new(0, 0, 0, 28)
-listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-listFrame.BackgroundTransparency = 1
-listFrame.ScrollBarThickness = 8
-local listLayout = Instance.new("UIListLayout", listFrame)
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0,6)
+-- list
+local list = Instance.new("ScrollingFrame", right)
+list.Size = UDim2.new(1, 0, 1, -28)
+list.Position = UDim2.new(0, 0, 0, 28)
+list.BackgroundTransparency = 1; list.ScrollBarThickness = 8; list.CanvasSize = UDim2.new(0,0,0,0)
+local listLayout = Instance.new("UIListLayout", list)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder; listLayout.Padding = UDim.new(0,6)
 
--- stores entries by id
+-- table entries storage
 local entries = {}
-
--- helper to refresh canvas size
 local function refreshCanvas()
-    listFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 12)
-    ignScroll.CanvasSize = UDim2.new(0, 0, 0, ignLayout.AbsoluteContentSize.Y + 12)
+    list.CanvasSize = UDim2.new(0,0,0, listLayout.AbsoluteContentSize.Y + 12)
+    ignScroll.CanvasSize = UDim2.new(0,0,0, ignLayout.AbsoluteContentSize.Y + 12)
 end
 
--- add an entry (id must be unique)
+-- add entry
 local function addEntry(payload)
     if not payload or not payload.id then return end
-    -- if exists, update
     if entries[payload.id] then
-        local row = entries[payload.id]
-        row.NameLabel.Text = payload.name or row.NameLabel.Text
-        row.MoneyLabel.Text = tostring(payload.money or row.MoneyLabel.Text)
+        local e = entries[payload.id]
+        e.NameLabel.Text = payload.name or e.NameLabel.Text
+        e.MoneyLabel.Text = tostring(payload.money or e.MoneyLabel.Text)
         return
     end
-    local row = Instance.new("Frame", listFrame)
-    row.Size = UDim2.new(1, -8, 0, 42)
-    row.BackgroundColor3 = Color3.fromRGB(26,28,32)
-    row.BorderSizePixel = 0
-    local rc = Instance.new("UICorner", row); rc.CornerRadius = UDim.new(0,8)
+    local row = Instance.new("Frame", list)
+    row.Size = UDim2.new(1, -8, 0, 44); row.BackgroundColor3 = Color3.fromRGB(22,24,28); row.BorderSizePixel = 0
+    local rCorner = Instance.new("UICorner", row); rCorner.CornerRadius = UDim.new(0,8)
 
     local nameLbl = Instance.new("TextLabel", row)
-    nameLbl.Size = UDim2.new(0.6, -12, 1, 0)
-    nameLbl.Position = UDim2.new(0, 8, 0, 0)
-    nameLbl.BackgroundTransparency = 1
-    nameLbl.Font = Enum.Font.GothamSemibold; nameLbl.TextSize = 16
-    nameLbl.TextColor3 = Color3.fromRGB(235,235,235)
-    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+    nameLbl.Size = UDim2.new(0.6, -12, 1, 0); nameLbl.Position = UDim2.new(0, 8, 0, 0)
+    nameLbl.BackgroundTransparency = 1; nameLbl.Font = Enum.Font.GothamSemibold; nameLbl.TextSize = 15
+    nameLbl.TextColor3 = Color3.fromRGB(235,235,235); nameLbl.TextXAlignment = Enum.TextXAlignment.Left
     nameLbl.Text = tostring(payload.name or "Unknown")
 
     local moneyLbl = Instance.new("TextLabel", row)
-    moneyLbl.Size = UDim2.new(0.4, -12, 1, 0)
-    moneyLbl.Position = UDim2.new(0.6, 8, 0, 0)
-    moneyLbl.BackgroundTransparency = 1
-    moneyLbl.Font = Enum.Font.GothamSemibold; moneyLbl.TextSize = 16
-    moneyLbl.TextColor3 = Color3.fromRGB(170,210,255)
-    moneyLbl.TextXAlignment = Enum.TextXAlignment.Right
+    moneyLbl.Size = UDim2.new(0.4, -12, 1, 0); moneyLbl.Position = UDim2.new(0.6, 8, 0, 0)
+    moneyLbl.BackgroundTransparency = 1; moneyLbl.Font = Enum.Font.GothamSemibold; moneyLbl.TextSize = 15
+    moneyLbl.TextColor3 = Color3.fromRGB(160,200,255); moneyLbl.TextXAlignment = Enum.TextXAlignment.Right
     moneyLbl.Text = tostring(payload.money or "0")
 
-    -- clickable overlay to "request join" (safe: fires remote to server)
-    local btn = Instance.new("TextButton", row)
-    btn.Size = UDim2.new(1, 0, 1, 0)
-    btn.BackgroundTransparency = 1
-    btn.Text = ""
-    btn.AutoButtonColor = true
-    btn.MouseButton1Click:Connect(function()
-        -- client requested join for this entry - server must decide how to handle
-        pcall(function()
-            remoteRequest:FireServer({ id = payload.id, name = payload.name, money = payload.money })
-        end)
-        statusLabel.Text = "Status: Requested join for "..tostring(payload.name)
-        delay(2, function() statusLabel.Text = "Status: Idle" end)
+    -- clickable overlay to request join (safe: fires remote)
+    local overlay = Instance.new("TextButton", row)
+    overlay.Size = UDim2.new(1,0,1,0); overlay.BackgroundTransparency = 1; overlay.Text = ""; overlay.AutoButtonColor = true
+    overlay.MouseButton1Click:Connect(function()
+        pcall(function() remoteRequest:FireServer({ id = payload.id, name = payload.name, money = payload.money }) end)
     end)
 
     entries[payload.id] = { Frame = row, NameLabel = nameLbl, MoneyLabel = moneyLbl }
@@ -320,227 +325,158 @@ local function removeEntry(id)
     refreshCanvas()
 end
 
--- expose global API to add/remove entries locally
-local public = {}
-public.AddEntry = addEntry
-public.RemoveEntry = removeEntry
+-- remote handlers (server -> client)
+remoteAdd.OnClientEvent:Connect(function(payload) addEntry(payload) end)
+remoteRemove.OnClientEvent:Connect(function(payload) if payload and payload.id then removeEntry(payload.id) end end)
 
--- listen to RemoteEvents from server
-remoteAdd.OnClientEvent:Connect(function(payload)
-    -- payload expected: { id=..., name=..., money=... }
-    addEntry(payload)
-end)
-remoteRemove.OnClientEvent:Connect(function(payload)
-    if payload and payload.id then removeEntry(payload.id) end
-end)
+-- expose local API
+_G.NicholasAJ = _G.NicholasAJ or {}
+_G.NicholasAJ.AddEntry = addEntry
+_G.NicholasAJ.RemoveEntry = removeEntry
 
--- IGNORE list handling
+-- ignore list management
 local ignoreList = {}
 local function rebuildIgnoreUI()
-    -- clear children
-    for _,c in ipairs(ignScroll:GetChildren()) do
-        if not c:IsA("UIListLayout") then c:Destroy() end
-    end
-    for i, item in ipairs(ignoreList) do
-        local t = Instance.new("Frame", ignScroll)
-        t.Size = UDim2.new(1, 0, 0, 28); t.BackgroundTransparency = 1
-        local lbl = Instance.new("TextLabel", t)
-        lbl.Size = UDim2.new(1, -40, 1, 0); lbl.Position = UDim2.new(0, 0, 0, 0)
-        lbl.BackgroundTransparency = 1; lbl.Text = tostring(item); lbl.Font = Enum.Font.Gotham; lbl.TextSize = 14
-        lbl.TextColor3 = Color3.fromRGB(220,220,220); lbl.TextXAlignment = Enum.TextXAlignment.Left
+    for _,c in ipairs(ignScroll:GetChildren()) do if not c:IsA("UIListLayout") then c:Destroy() end end
+    for i,item in ipairs(ignoreList) do
+        local f = Instance.new("Frame", ignScroll); f.Size = UDim2.new(1,0,0,28); f.BackgroundTransparency = 1
+        local lbl = Instance.new("TextLabel", f); lbl.Size = UDim2.new(1, -40, 1, 0); lbl.Position = UDim2.new(0, 0, 0, 0)
+        lbl.BackgroundTransparency = 1; lbl.Text = tostring(item); lbl.Font = Enum.Font.Gotham; lbl.TextSize = 13; lbl.TextColor3 = Color3.fromRGB(220,220,220)
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
 
-        local rem = Instance.new("TextButton", t)
-        rem.Size = UDim2.new(0, 32, 0, 24); rem.Position = UDim2.new(1, -36, 0, 2); rem.Text = "X"; rem.Font = Enum.Font.GothamBold
-        rem.TextSize = 14; rem.BackgroundColor3 = Color3.fromRGB(70,70,70); rem.TextColor3 = Color3.fromRGB(255,255,255)
+        local rem = Instance.new("TextButton", f); rem.Size = UDim2.new(0, 30, 0, 22); rem.Position = UDim2.new(1, -34, 0, 3)
+        rem.Text = "X"; rem.Font = Enum.Font.GothamBold; rem.TextSize = 14; rem.BackgroundColor3 = Color3.fromRGB(70,70,70)
         local rc = Instance.new("UICorner", rem); rc.CornerRadius = UDim.new(0,6)
         rem.MouseButton1Click:Connect(function()
             for idx,v in ipairs(ignoreList) do if v == item then table.remove(ignoreList, idx); break end end
-            rebuildIgnoreUI()
             setAttr("NAJ.IgnoreList", table.concat(ignoreList, ","))
+            rebuildIgnoreUI()
         end)
     end
     refreshCanvas()
 end
 
--- load ignore list from attribute (comma separated)
 local function loadIgnore()
-    local s = getAttr("NAJ.IgnoreList", "")
+    local raw = getAttr("NAJ.IgnoreList", "")
     ignoreList = {}
-    if s ~= "" then
-        for part in s:gmatch("[^,]+") do
-            local trimmed = part:gsub("^%s*(.-)%s*$", "%1")
-            if trimmed ~= "" then table.insert(ignoreList, trimmed) end
+    if raw ~= "" then
+        for s in raw:gmatch("[^,]+") do
+            local t = s:gsub("^%s*(.-)%s*$","%1")
+            if t ~= "" then table.insert(ignoreList, t) end
         end
     end
     rebuildIgnoreUI()
 end
 loadIgnore()
 
--- add ignore button
-addIgnBtn.MouseButton1Click:Connect(function()
-    local text = tostring(ignBox.Text or "")
-    if text == "" then return end
-    for part in text:gmatch("[^,]+") do
-        local trimmed = part:gsub("^%s*(.-)%s*$", "%1")
-        if trimmed ~= "" then table.insert(ignoreList, trimmed) end
+addIgn.MouseButton1Click:Connect(function()
+    local toAdd = tostring(ignBox.Text or "")
+    if toAdd ~= "" then
+        for s in toAdd:gmatch("[^,]+") do
+            local t = s:gsub("^%s*(.-)%s*$","%1")
+            if t ~= "" then table.insert(ignoreList,t) end
+        end
+        ignBox.Text = ""
+        setAttr("NAJ.IgnoreList", table.concat(ignoreList, ","))
+        rebuildIgnoreUI()
     end
-    ignBox.Text = ""
-    setAttr("NAJ.IgnoreList", table.concat(ignoreList, ","))
-    rebuildIgnoreUI()
 end)
-
-clearIgnBtn.MouseButton1Click:Connect(function()
+clearIgn.MouseButton1Click:Connect(function()
     ignoreList = {}
     setAttr("NAJ.IgnoreList", "")
     rebuildIgnoreUI()
 end)
 
--- auto toggle behavior
-local function applyAutoState(val)
-    setAttr("NAJ.AutoJoin", val)
-    autoToggle.Text = val and "ON" or "OFF"
-    autoToggle.BackgroundColor3 = val and Color3.fromRGB(80,170,80) or Color3.fromRGB(60,60,64)
-    if val then
-        statusLabel.Text = "Status: AutoJoin ON"
-    else
-        statusLabel.Text = "Status: Idle"
-    end
-    delay(2, function() if statusLabel then statusLabel.Text = "Status: Idle" end end)
+-- AutoToggle
+local function applyAuto(v)
+    setAttr("NAJ.AutoJoin", v)
+    autoToggle.Text = v and "ON" or "OFF"
+    autoToggle.BackgroundColor3 = v and Color3.fromRGB(80,180,80) or Color3.fromRGB(64,64,68)
+    statusLabel.Text = v and "Status: AutoJoin ON" or "Status: Idle"
+    delay(2, function() statusLabel.Text = "Status: Idle" end)
 end
-
 autoToggle.MouseButton1Click:Connect(function()
-    local cur = getAttr("NAJ.AutoJoin", false)
-    applyAutoState(not cur)
+    applyAuto(not getAttr("NAJ.AutoJoin", false))
 end)
+applyAuto(getAttr("NAJ.AutoJoin", false))
 
--- save min box on focus lost
-minBox.FocusLost:Connect(function(enter)
-    local n = tonumber(minBox.Text) or 0
-    if n < 0 then n = 0 end
-    setAttr("NAJ.MinPerSec", n)
-    minBox.Text = tostring(n)
-end)
-
--- Save button (applies theme values)
-local function applyThemeFromStored()
-    local r = getAttr("NAJ.ThemeR", 34); local g = getAttr("NAJ.ThemeG", 106); local b = getAttr("NAJ.ThemeB", 255)
-    local col = Color3.new(r, g, b)
-    -- subtle theme apply (we use topbar background color)
-    -- convert Color3 from 0-1 to 0-255 if necessary
-    if r <= 1 and g <= 1 and b <= 1 then col = Color3.new(r, g, b) end
-    BarApplyColor = col
-    -- we'll set main topbar via BarApplyColor variable below
-end
-applyThemeFromStored()
-
--- Save button for color and min/max (we add a small Save near min)
-local saveBtn = Instance.new("TextButton", leftPanel)
-saveBtn.Size = UDim2.new(0, leftW - 24, 0, 36)
-saveBtn.Position = UDim2.new(0, 12, 1, -46)
+-- save button (fixed single btn)
+local saveBtn = Instance.new("TextButton", left)
+saveBtn.Size = UDim2.new(1, -24, 0, 36)
+saveBtn.Position = UDim2.new(0, 12, 1, -44)
 saveBtn.Text = "Save Settings"
-saveBtn.Font = Enum.Font.GothamBold
-saveBtn.TextSize = 16
-saveBtn.BackgroundColor3 = Color3.fromRGB(70,130,210)
+saveBtn.Font = Enum.Font.GothamBold; saveBtn.TextSize = 16
+saveBtn.BackgroundColor3 = Color3.fromRGB(70,120,220); saveBtn.TextColor3 = Color3.fromRGB(255,255,255)
 local saveCorner = Instance.new("UICorner", saveBtn); saveCorner.CornerRadius = UDim.new(0,8)
 
 saveBtn.MouseButton1Click:Connect(function()
-    -- store theme currently from Bar background (convert to components)
-    local c = main.BackgroundColor3 -- we won't change whole main bg, but store min and ignore
-    local minN = tonumber(minBox.Text) or 0
-    setAttr("NAJ.MinPerSec", math.max(0, math.floor(minN)))
-    setAttr("NAJ.MaxPerSec", 999999999999999) -- unlimited as requested
-    setAttr("NAJ.ThemeR", currentTheme().R); setAttr("NAJ.ThemeG", currentTheme().G); setAttr("NAJ.ThemeB", currentTheme().B)
-    StatusLabel.Text = "Status: Settings saved"
-    delay(1.8, function() if StatusLabel then StatusLabel.Text = "Status: Idle" end end)
+    local n = tonumber(minBox.Text) or 0
+    if n < 0 then n = 0 end
+    setAttr("NAJ.MinPerSec", math.floor(n))
+    -- unlimited max (as requested) set to a huge value for safety
+    setAttr("NAJ.MaxPerSec", 1e30)
+    statusLabel.Text = "Status: Settings saved"
+    delay(1.5, function() if statusLabel then statusLabel.Text = "Status: Idle" end end)
 end)
 
--- Make window draggable (works even when minimized)
-local dragging, dragInput, dragStart, startPos
-local function update(input)
-    local delta = input.Position - dragStart
-    main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-topbar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = main.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-topbar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
-end)
+-- Title-right status field
+local statusLabel = Instance.new("TextLabel", top)
+statusLabel.Size = UDim2.new(0, 220, 0, 20)
+statusLabel.Position = UDim2.new(1, -246, 0, 48)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Font = Enum.Font.Gotham; statusLabel.TextSize = 14
+statusLabel.TextColor3 = Color3.fromRGB(230,230,230)
+statusLabel.TextXAlignment = Enum.TextXAlignment.Right
+statusLabel.Text = "Status: Idle"
 
--- Minimize behavior: collapse to topbar only
+-- minimize behavior (collapse to topbar)
 local minimized = false
 local function minimize()
     if minimized then return end
     minimized = true
-    -- tween size to topbar size
-    TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad), {Size = UDim2.fromOffset(520, 70)}):Play()
+    TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad), {Size = UDim2.fromOffset(WIDTH, 72)}):Play()
 end
 local function restore()
     if not minimized then return end
     minimized = false
-    TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad), {Size = UDim2.fromOffset(MAIN_W, MAIN_H)}):Play()
+    TweenService:Create(main, TweenInfo.new(0.28, Enum.EasingStyle.Quad), {Size = UDim2.fromOffset(WIDTH, HEIGHT)}):Play()
 end
+minBtn.MouseButton1Click:Connect(function() if minimized then restore() else minimize() end end)
 
-minimizeBtn.MouseButton1Click:Connect(function()
-    if minimized then restore() else minimize() end
+-- draggable (top drag area)
+local dragging, dragStart, startPos
+top.InputBegan:Connect(function(inp)
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = inp.Position
+        startPos = main.Position
+        inp.Changed:Connect(function()
+            if inp.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+top.InputChanged:Connect(function(inp) if inp.UserInputType == Enum.UserInputType.MouseMovement then dragInput = inp end end)
+UserInputService.InputChanged:Connect(function(inp)
+    if dragging and inp.UserInputType == Enum.UserInputType.MouseMovement and dragStart and startPos then
+        local delta = inp.Position - dragStart
+        main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
 end)
 
--- Ensure UI persists after respawn: reapply attributes on CharacterAdded
+-- ensure attributes re-applied on respawn
 player.CharacterAdded:Connect(function()
-    -- re-apply stored values
-    applyAutoState(getAttr("NAJ.AutoJoin", false))
+    applyAuto(getAttr("NAJ.AutoJoin", false))
     minBox.Text = tostring(getAttr("NAJ.MinPerSec", 0))
-    -- re-add entries if server will send them again; otherwise entries persist client-side
 end)
 
--- Public API: allow local code to add/remove entries
--- usage: require or call via screenGui:FindFirstChild("NicholasAJ_API")...
-local apiFolder = screenGui:FindFirstChild("NicholasAJ_API")
-if apiFolder then apiFolder:Destroy() end
-apiFolder = Instance.new("Folder", screenGui); apiFolder.Name = "NicholasAJ_API"
+-- studio demo entries (only in Studio)
+pcall(function()
+    if RunService:IsStudio() then
+        addEntry({ id = "demo-1", name = "Brainrot Alpha", money = "10,000,000" })
+        addEntry({ id = "demo-2", name = "Brainrot Beta", money = "2,500,000" })
+    end
+end)
 
-local bindAdd = Instance.new("BindableFunction", apiFolder); bindAdd.Name = "AddEntry"
-bindAdd.OnInvoke = function(payload) addEntry(payload) end
-local bindRem = Instance.new("BindableFunction", apiFolder); bindRem.Name = "RemoveEntry"
-bindRem.OnInvoke = function(id) removeEntry(id) end
-
--- Also expose global table (convenience)
-_G.NicholasAJ = _G.NicholasAJ or {}
-_G.NicholasAJ.AddEntry = addEntry
-_G.NicholasAJ.RemoveEntry = removeEntry
-_G.NicholasAJ.List = entries
-
--- Quick demo/test entries if running in Studio (will not run on live)
-if RUN_SERVICE == nil then
-    -- running in normal environment; but we can optionally add a small demo if Studio
-    pcall(function()
-        if game:GetService("RunService"):IsStudio() then
-            addEntry({ id = "demo1", name = "Brainrot A", money = "10,000,000" })
-            addEntry({ id = "demo2", name = "Brainrot B", money = "2,500,000" })
-        end
-    end)
-end
-
--- Final: apply initial states
-applyAutoState(getAttr("NAJ.AutoJoin", false))
-minBox.Text = tostring(getAttr("NAJ.MinPerSec", 0))
-rebuildIgnoreUI()
-refreshCanvas()
-
--- End of script — UI ready.
+-- finished
+statusLabel.Text = "Status: Ready"
+delay(1.5, function() if statusLabel then statusLabel.Text = "Status: Idle" end end)
