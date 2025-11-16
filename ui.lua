@@ -425,4 +425,3 @@ LogBox.TextYAlignment = Enum.TextYAlignment.Top
 LogBox.AutomaticSize = Enum.AutomaticSize.Y
 LogBox.Parent = LogScroll
 LogBox.ZIndex = 4
-
