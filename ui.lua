@@ -1,161 +1,220 @@
---// Nicolas's Auto Joiner UI
---// Safe, UI-only, no exploit functions.
+-- ui.lua
+-- Nicolas's Auto-Joiner (Upgraded UI, safe UI-only)
+-- Size: 600 x 500 (longer / less wide)
+-- NOTE: This file only implements UI and simulated retry behavior. NO exploit/auto-join network actions.
 
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- ScreenGui
-local gui = Instance.new("ScreenGui")
-gui.Name = "AutoJoinerUI"
-gui.ResetOnSpawn = false
-gui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+local PLAYER = Players.LocalPlayer
+local PLAYERGUI = PLAYER:WaitForChild("PlayerGui")
 
--- Main Frame
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 380, 0, 320)
-frame.Position = UDim2.new(0.5, -190, 0.5, -160)
-frame.BackgroundColor3 = Color3.fromRGB(20, 60, 255)
-frame.BorderSizePixel = 0
-frame.Parent = gui
+-- Config
+local WIDTH, HEIGHT = 600, 500
+local DISCORD_INVITE = "https://discord.gg/pAgSFBKj"
+local MAX_RETRIES = 30
+local RETRY_INTERVAL = 1 -- seconds between simulated retries
 
--- Rainbow Outline Frame
-local outline = Instance.new("UIStroke")
-outline.Thickness = 3
-outline.Parent = frame
+-- Utility: create ancestor ScreenGui container
+local function createScreenGui(name)
+    local sg = Instance.new("ScreenGui")
+    sg.Name = name
+    sg.ResetOnSpawn = false
+    sg.Parent = PLAYERGUI
+    return sg
+end
 
--- Animate Rainbow Border
+-- Clear any previous instance (helps when reloading)
+for _, v in ipairs(PLAYERGUI:GetChildren()) do
+    if v.Name == "NicolasAutoJoinerGUI" then
+        v:Destroy()
+    end
+end
+
+local screenGui = createScreenGui("NicolasAutoJoinerGUI")
+
+-- Main container frame
+local main = Instance.new("Frame")
+main.Name = "MainWindow"
+main.Size = UDim2.new(0, WIDTH, 0, HEIGHT)
+main.Position = UDim2.new(0.5, -WIDTH/2, 0.5, -HEIGHT/2)
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.BackgroundColor3 = Color3.fromRGB(20, 90, 255) -- blue background
+main.BorderSizePixel = 0
+main.Parent = screenGui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+
+-- Rainbow outline (UIStroke)
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 4
+stroke.Parent = main
+
+-- Animate rainbow border
 task.spawn(function()
     local hue = 0
-    while task.wait(0.04) do
-        hue = (hue + 0.01) % 1
-        outline.Color = Color3.fromHSV(hue, 1, 1)
+    while stroke.Parent and RunService.Heartbeat:Wait() do
+        hue = (hue + 0.0025) % 1
+        stroke.Color = Color3.fromHSV(hue, 1, 1)
+        -- small wait via Heartbeat loop above
     end
 end)
 
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+-- Make draggable
+local function makeDraggable(frame)
+    local dragging, dragInput, dragStart, startPos
 
--- Top Bar
-local top = Instance.new("Frame")
-top.Size = UDim2.new(1, 0, 0, 45)
-top.BackgroundColor3 = Color3.fromRGB(15, 40, 180)
-top.BorderSizePixel = 0
-top.Parent = frame
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
 
-Instance.new("UICorner", top).CornerRadius = UDim.new(0, 10)
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
 
--- Title
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
+makeDraggable(main)
+
+-- Top bar (thicker)
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.Size = UDim2.new(1, 0, 0, 64) -- thicker top
+topBar.Position = UDim2.new(0, 0, 0, 0)
+topBar.BackgroundColor3 = Color3.fromRGB(12, 34, 140)
+topBar.BorderSizePixel = 0
+topBar.Parent = main
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 10)
+
+-- Title label
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -45, 1, 0)
-title.Position = UDim2.new(0, 10, 0, 0)
+title.Name = "Title"
+title.Size = UDim2.new(1, -100, 1, 0)
+title.Position = UDim2.new(0, 16, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "Nicolas's Auto-Joiner"
-title.TextSize = 20
 title.Font = Enum.Font.GothamBold
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 22
+title.TextColor3 = Color3.fromRGB(255,255,255)
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = top
+title.Parent = topBar
 
--- Close Button (collapses UI)
-local close = Instance.new("TextButton")
-close.Size = UDim2.new(0, 40, 1, 0)
-close.Position = UDim2.new(1, -40, 0, 0)
-close.Text = "X"
-close.TextSize = 20
-close.Font = Enum.Font.GothamBold
-close.BackgroundTransparency = 1
-close.TextColor3 = Color3.fromRGB(255, 255, 255)
-close.Parent = top
+-- Minimized/Collapsed strip's label (will be reused)
+local collapsedStrip = Instance.new("Frame")
+collapsedStrip.Name = "CollapsedStrip"
+collapsedStrip.Size = UDim2.new(0, 220, 0, 44)
+collapsedStrip.Position = UDim2.new(0.5, -110, 0, 8)
+collapsedStrip.AnchorPoint = Vector2.new(0.5, 0)
+collapsedStrip.BackgroundColor3 = Color3.fromRGB(20, 90, 255)
+collapsedStrip.BorderSizePixel = 0
+collapsedStrip.Visible = false
+collapsedStrip.Parent = screenGui
+Instance.new("UICorner", collapsedStrip).CornerRadius = UDim.new(0, 10)
 
--- Collapsed Bar (hidden by default)
-local collapsed = Instance.new("Frame")
-collapsed.Size = UDim2.new(0, 200, 0, 35)
-collapsed.Position = UDim2.new(0.5, -100, 0, 20)
-collapsed.BackgroundColor3 = Color3.fromRGB(20, 60, 255)
-collapsed.Visible = false
-collapsed.Parent = gui
+local collapsedBtn = Instance.new("TextButton")
+collapsedBtn.Size = UDim2.new(1, 0, 1, 0)
+collapsedBtn.BackgroundTransparency = 1
+collapsedBtn.Text = "Nicolas's Auto-Joiner"
+collapsedBtn.Font = Enum.Font.GothamBold
+collapsedBtn.TextSize = 16
+collapsedBtn.TextColor3 = Color3.fromRGB(255,255,255)
+collapsedBtn.Parent = collapsedStrip
 
-local collapsedTitle = Instance.new("TextButton")
-collapsedTitle.Size = UDim2.new(1, 0, 1, 0)
-collapsedTitle.Text = "Nicolas's Auto-Joiner"
-collapsedTitle.BackgroundTransparency = 1
-collapsedTitle.TextSize = 18
-collapsedTitle.Font = Enum.Font.GothamBold
-collapsedTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-collapsedTitle.Parent = collapsed
+-- Close (collapse) button on the top bar (X). Not destroying; only collapse.
+local closeBtn = Instance.new("TextButton")
+closeBtn.Name = "CloseButton"
+closeBtn.Size = UDim2.new(0, 48, 0, 40)
+closeBtn.Position = UDim2.new(1, -56, 0, 12)
+closeBtn.AnchorPoint = Vector2.new(0, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Text = "X"
+closeBtn.TextSize = 20
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.Parent = topBar
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,8)
 
--- Discord Link Section
-local discord = Instance.new("TextButton")
-discord.Size = UDim2.new(1, -20, 0, 30)
-discord.Position = UDim2.new(0, 10, 0, 60)
-discord.Text = "Join Discord: https://discord.gg/pAgSFBKj"
-discord.TextSize = 16
-discord.Font = Enum.Font.Gotham
-discord.BackgroundColor3 = Color3.fromRGB(30, 80, 255)
-discord.TextColor3 = Color3.fromRGB(255, 255, 255)
-discord.Parent = frame
+-- Left panel (settings)
+local leftPanel = Instance.new("Frame")
+leftPanel.Name = "LeftPanel"
+leftPanel.Size = UDim2.new(0, 220, 1, -64)
+leftPanel.Position = UDim2.new(0, 0, 0, 64)
+leftPanel.BackgroundTransparency = 1
+leftPanel.Parent = main
 
-Instance.new("UICorner", discord).CornerRadius = UDim.new(0, 6)
+-- Auto Join toggle (kept, UI-only)
+local function createToggle(parent, text, y)
+    local cont = Instance.new("Frame")
+    cont.Size = UDim2.new(1, -16, 0, 32)
+    cont.Position = UDim2.new(0, 8, 0, y)
+    cont.BackgroundTransparency = 1
+    cont.Parent = parent
 
-discord.MouseButton1Click:Connect(function()
-    setclipboard("https://discord.gg/pAgSFBKj")
-end)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.65, 0, 1, 0)
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 18
+    label.TextColor3 = Color3.fromRGB(255,255,255)
+    label.Text = text
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = cont
 
--- Minimum/Second Label
-local minSecLabel = Instance.new("TextLabel")
-minSecLabel.Size = UDim2.new(1, -20, 0, 30)
-minSecLabel.Position = UDim2.new(0, 10, 0, 110)
-minSecLabel.BackgroundTransparency = 1
-minSecLabel.Text = "Minimum / Second:"
-minSecLabel.TextSize = 16
-minSecLabel.Font = Enum.Font.GothamBold
-minSecLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-minSecLabel.Parent = frame
+    local toggle = Instance.new("TextButton")
+    toggle.Size = UDim2.new(0, 48, 0, 26)
+    toggle.Position = UDim2.new(1, -52, 0, 3)
+    toggle.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    toggle.Text = ""
+    toggle.Parent = cont
+    Instance.new("UICorner", toggle).CornerRadius = UDim.new(1,0)
 
--- Input Box
-local input = Instance.new("TextBox")
-input.Size = UDim2.new(1, -20, 0, 35)
-input.Position = UDim2.new(0, 10, 0, 145)
-input.BackgroundColor3 = Color3.fromRGB(35, 90, 255)
-input.PlaceholderText = "Enter minimum value..."
-input.Text = ""
-input.TextColor3 = Color3.fromRGB(255, 255, 255)
-input.Font = Enum.Font.Gotham
-input.TextSize = 16
-input.Parent = frame
+    local enabled = false
+    toggle.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        toggle.BackgroundColor3 = enabled and Color3.fromRGB(0,200,0) or Color3.fromRGB(70,70,70)
+    end)
 
-Instance.new("UICorner", input).CornerRadius = UDim.new(0, 6)
+    return toggle, function() return enabled end
+end
 
--- Retry Counter
-local retry = Instance.new("TextLabel")
-retry.Size = UDim2.new(1, -20, 0, 30)
-retry.Position = UDim2.new(0, 10, 0, 190)
-retry.BackgroundTransparency = 1
-retry.Text = "Retry: 0 / 30"
-retry.TextSize = 16
-retry.Font = Enum.Font.GothamBold
-retry.TextColor3 = Color3.fromRGB(255, 255, 255)
-retry.Parent = frame
+local autoToggle = createToggle(leftPanel, "Auto Join", 12)
 
--- Auto Join Button (UI only)
-local autoJoin = Instance.new("TextButton")
-autoJoin.Size = UDim2.new(1, -20, 0, 40)
-autoJoin.Position = UDim2.new(0, 10, 0, 235)
-autoJoin.Text = "Start Auto-Join"
-autoJoin.TextSize = 18
-autoJoin.Font = Enum.Font.GothamBold
-autoJoin.TextColor3 = Color3.fromRGB(255, 255, 255)
-autoJoin.BackgroundColor3 = Color3.fromRGB(25, 70, 255)
-autoJoin.Parent = frame
+-- Removed Pet Name Filters (not created)
 
-Instance.new("UICorner", autoJoin).CornerRadius = UDim.new(0, 6)
+-- Minimum / Second label + textbox
+local minLabel = Instance.new("TextLabel")
+minLabel.Size = UDim2.new(1, -16, 0, 24)
+minLabel.Position = UDim2.new(0, 8, 0, 64)
+minLabel.BackgroundTransparency = 1
+minLabel.Font = Enum.Font.GothamBold
+minLabel.TextSize = 16
+minLabel.TextColor
 
--- CLOSE LOGIC
-close.MouseButton1Click:Connect(function()
-    frame.Visible = false
-    collapsed.Visible = true
-end)
-
-collapsedTitle.MouseButton1Click:Connect(function()
-    collapsed.Visible = false
-    frame.Visible = true
 end)
