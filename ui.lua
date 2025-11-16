@@ -1,12 +1,18 @@
---[[  
-Nick and Scrap's Auto Jointer (Aesthetic UI) - FINAL VERSION  
-
--- Discord link is now a clickable button that simulates copying the link.  
--- The mock rare item log has been updated to use the term "Brainrot."  
--- The Minimum/sec (MS) input is automatically multiplied by 1,000,000 (Millions).  
+--[[ 
+    Nick and Scrap's Auto Jointer (Aesthetic UI) - FINAL VERSION (All requested features)
+    - Real clipboard copy (setclipboard guarded with pcall)
+    - Auto-Join toggle (start/stop)
+    - Discord emphasized slightly (bigger text + UIStroke)
+    - Collapse to header-only and reopen (keeps Title, Discord, X visible)
+    - Drag UI by header (smooth)
+    - No visual layout changes beyond small Discord emphasis
+    Copy / paste entire block into your ui.lua
 ]]
 
+
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
@@ -29,12 +35,9 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 35)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 MainFrame.ZIndex = 1
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 14)
 
--- Round corners
-local UICorner = Instance.new("UICorner", MainFrame)
-UICorner.CornerRadius = UDim.new(0, 14)
-
--- RAINBOW BORDER
+-- RAINBOW BORDER (Outline)
 local RainbowBorder = Instance.new("Frame")
 RainbowBorder.Size = FRAME_SIZE + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2)
 RainbowBorder.Position = FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS)
@@ -42,15 +45,13 @@ RainbowBorder.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 RainbowBorder.BorderSizePixel = 0
 RainbowBorder.ZIndex = 0
 RainbowBorder.Parent = ScreenGui
-
 Instance.new("UICorner", RainbowBorder).CornerRadius = UDim.new(0, 14 + BORDER_THICKNESS)
 
-local function updateRainbow()
+-- Rainbow Effect Function (Runs constantly)
+RunService.RenderStepped:Connect(function()
     local hue = tick() % 10 / 10
     RainbowBorder.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
-end
-
-game:GetService("RunService").RenderStepped:Connect(updateRainbow)
+end)
 
 -- Header Bar
 local Header = Instance.new("Frame")
@@ -59,7 +60,6 @@ Header.BackgroundColor3 = Color3.fromRGB(33, 35, 46)
 Header.BorderSizePixel = 0
 Header.Parent = MainFrame
 Header.ZIndex = 2
-
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
 -- Title
@@ -75,38 +75,58 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 Title.ZIndex = 3
 
--- HIGH VISIBILITY DISCORD BUTTON
+-- HIGH VISIBILITY CLICKABLE DISCORD LINK
 local DiscordBtn = Instance.new("TextButton")
-DiscordBtn.Size = UDim2.new(0, 200, 0, 15)
+DiscordBtn.Size = UDim2.new(0, 260, 0, 17) -- slightly wider and taller for visibility
 DiscordBtn.Position = UDim2.new(0, 20, 0, 25)
 DiscordBtn.BackgroundTransparency = 1
 DiscordBtn.Text = "Discord: discord.gg/pAgSFBKj (Click to Copy)"
 DiscordBtn.Font = Enum.Font.GothamBold
-DiscordBtn.TextSize = 13
+DiscordBtn.TextSize = 14
 DiscordBtn.TextColor3 = Color3.fromRGB(80, 255, 130)
 DiscordBtn.TextXAlignment = Enum.TextXAlignment.Left
 DiscordBtn.Parent = Header
 DiscordBtn.ZIndex = 3
 
+-- Add small glow/outline for visibility (keeps layout)
+local discordStroke = Instance.new("UIStroke")
+discordStroke.Thickness = 1
+discordStroke.Color = Color3.fromRGB(80, 255, 130)
+discordStroke.Transparency = 0.7
+discordStroke.Parent = DiscordBtn
+
 local originalDiscordColor = DiscordBtn.TextColor3
 
-local LogBox
-local LogScroll
+-- Log placeholder (declared early so addLog can be used)
+local LogBox = Instance.new("TextLabel")
+local LogScroll = Instance.new("ScrollingFrame")
 
-local function addLog(text)
-    LogBox.Text = LogBox.Text .. "\n" .. text
-    task.wait()
-    LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset)
+-- addLog function
+function addLog(text)
+    if LogBox and LogBox.Parent then
+        LogBox.Text = LogBox.Text .. "\n" .. text
+        task.wait()
+        pcall(function()
+            LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset)
+        end)
+    else
+        warn(text)
+    end
 end
 
+-- Real clipboard copy behavior (uses setclipboard if available)
 DiscordBtn.MouseButton1Click:Connect(function()
-    addLog("[DISCORD] Link copied to clipboard (Aesthetic Only).")
+    pcall(function()
+        setclipboard("https://discord.gg/pAgSFBKj")
+    end)
+    addLog("[DISCORD] Link copied to clipboard.")
+    -- visual feedback
     DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    task.wait(0.1)
+    task.wait(0.12)
     DiscordBtn.TextColor3 = originalDiscordColor
 end)
 
--- COLLAPSE BUTTON
+-- Collapse/Expand Button (red X)
 local isExpanded = true
 local HeaderHeight = 45
 local MinHeight = UDim2.new(0, 720, 0, HeaderHeight)
@@ -123,39 +143,9 @@ CollapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CollapseBtn.BorderSizePixel = 0
 CollapseBtn.Parent = Header
 CollapseBtn.ZIndex = 3
-
 Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1, 0)
 
-CollapseBtn.MouseButton1Click:Connect(function()
-    local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - HeaderHeight) / 2
-
-    if isExpanded then
-        MainFrame:TweenSize(MinHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        RainbowBorder:TweenSize(MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2),
-            Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS)
-            + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT),
-            Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        isExpanded = false
-    else
-        MainFrame:TweenSize(MaxHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        MainFrame:TweenPosition(FRAME_POS, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        RainbowBorder:TweenSize(MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2),
-            Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS),
-            Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        isExpanded = true
-    end
-end)
-
--- LEFT PANEL
+-- Left Panel
 local Left = Instance.new("Frame")
 Left.Size = UDim2.new(0, 240, 1, -55)
 Left.Position = UDim2.new(0, 0, 0, 55)
@@ -163,9 +153,9 @@ Left.BackgroundColor3 = Color3.fromRGB(30, 32, 42)
 Left.BorderSizePixel = 0
 Left.Parent = MainFrame
 Left.ZIndex = 2
-
 Instance.new("UICorner", Left).CornerRadius = UDim.new(0, 10)
 
+-- Left Title ("Features")
 local LeftTitle = Instance.new("TextLabel")
 LeftTitle.Text = "Features"
 LeftTitle.Font = Enum.Font.GothamBold
@@ -177,19 +167,15 @@ LeftTitle.Size = UDim2.new(1, -20, 0, 20)
 LeftTitle.Parent = Left
 LeftTitle.ZIndex = 3
 
--- LOG SETUP
-LogScroll = Instance.new("ScrollingFrame")
-LogBox = Instance.new("TextLabel")
-
--- Feature toggle builder
+-- Function to create feature buttons/toggles
 local function createFeatureToggle(text, yPos)
     local Btn = Instance.new("TextButton")
     Btn.Text = text
     Btn.Font = Enum.Font.GothamBold
     Btn.TextSize = 16
-    Btn.BackgroundColor3 = Color3.fromRGB(50, 52, 65)
+    Btn.BackgroundColor3 = Color3.fromRGB(50, 52, 65) -- Off state color
     local DefaultColor = Btn.BackgroundColor3
-    local ActiveColor = Color3.fromRGB(40, 210, 120)
+    local ActiveColor = Color3.fromRGB(40, 210, 120) -- On state color
     Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     Btn.Position = UDim2.new(0, 15, 0, yPos)
     Btn.Size = UDim2.new(1, -30, 0, 40)
@@ -200,7 +186,6 @@ local function createFeatureToggle(text, yPos)
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
 
     local isActive = false
-
     Btn.MouseButton1Click:Connect(function()
         isActive = not isActive
         if isActive then
@@ -213,11 +198,10 @@ local function createFeatureToggle(text, yPos)
             addLog("[FEATURE] " .. text .. " Deactivated.")
         end
     end)
-
     return Btn
 end
 
--- AUTO JOIN BUTTON
+-- Feature 1: Auto Join (Button style)
 local AutoJoinBtn = Instance.new("TextButton")
 AutoJoinBtn.Text = "Auto Join"
 AutoJoinBtn.Font = Enum.Font.GothamBold
@@ -230,14 +214,14 @@ AutoJoinBtn.Size = UDim2.new(1, -30, 0, 40)
 AutoJoinBtn.BorderSizePixel = 0
 AutoJoinBtn.Parent = Left
 AutoJoinBtn.ZIndex = 3
-
 Instance.new("UICorner", AutoJoinBtn).CornerRadius = UDim.new(0, 8)
 
--- PERSISTENT REJOIN BUTTON
+-- Feature 2: Persistent Rejoin (Toggle style)
 local PersistentRejoinBtn = createFeatureToggle("Persistent Rejoin", 100)
 
--- Create Input Box
+-- Input Creator (for Minimum MS)
 local function createInput(labelText, defaultText, yPos)
+    -- Label text updated to mention Millions
     local Label = Instance.new("TextLabel")
     Label.Text = labelText .. " (in Millions)"
     Label.Font = Enum.Font.GothamMedium
@@ -262,13 +246,14 @@ local function createInput(labelText, defaultText, yPos)
     Box.ZIndex = 3
 
     Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 6)
+
     return Box
 end
 
--- Minimum/sec MS input
-local MinMSBox = createInput("Minimum/sec (MS)", "10", 170)
+-- Feature 3: Minimum/sec (MS)
+local MinMSBox = createInput("Minimum/sec (MS)", "10", 170) -- Defaulting to "10" (represents 10 Million)
 
--- STATUS LABEL
+-- Status Label
 local Status = Instance.new("TextLabel")
 Status.Text = "Status: Idle"
 Status.Font = Enum.Font.GothamMedium
@@ -280,7 +265,7 @@ Status.Size = UDim2.new(1, -30, 0, 20)
 Status.Parent = Left
 Status.ZIndex = 3
 
--- RIGHT PANEL
+-- Right Panel (Logs)
 local Right = Instance.new("Frame")
 Right.Size = UDim2.new(0, 455, 1, -55)
 Right.Position = UDim2.new(0, 260, 0, 55)
@@ -288,10 +273,8 @@ Right.BackgroundColor3 = Color3.fromRGB(30, 32, 42)
 Right.BorderSizePixel = 0
 Right.Parent = MainFrame
 Right.ZIndex = 2
-
 Instance.new("UICorner", Right).CornerRadius = UDim.new(0, 10)
 
--- Right Title
 local LogTitle = Instance.new("TextLabel")
 LogTitle.Text = "Server Logs & Join List"
 LogTitle.Font = Enum.Font.GothamBold
@@ -303,7 +286,7 @@ LogTitle.Size = UDim2.new(1, -20, 0, 20)
 LogTitle.Parent = Right
 LogTitle.ZIndex = 3
 
--- Scroll Frame
+-- Log Box (ScrollingFrame)
 LogScroll.Position = UDim2.new(0, 15, 0, 45)
 LogScroll.Size = UDim2.new(1, -30, 1, -60)
 LogScroll.BackgroundColor3 = Color3.fromRGB(23, 24, 32)
@@ -315,10 +298,9 @@ LogScroll.ScrollingDirection = Enum.ScrollingDirection.Y
 LogScroll.ScrollBarImageColor3 = Color3.fromRGB(50, 52, 65)
 LogScroll.Parent = Right
 LogScroll.ZIndex = 3
-
 Instance.new("UICorner", LogScroll).CornerRadius = UDim.new(0, 8)
 
--- LOG TEXTBOX
+-- LogBox (TextLabel inside LogScroll)
 LogBox.Name = "LogText"
 LogBox.Text = "Log Initialized. Set features and click 'Auto Join'."
 LogBox.Font = Enum.Font.Code
@@ -334,48 +316,157 @@ LogBox.AutomaticSize = Enum.AutomaticSize.Y
 LogBox.Parent = LogScroll
 LogBox.ZIndex = 4
 
--- AUTO JOIN SIMULATION
-AutoJoinBtn.MouseButton1Click:Connect(function()
-    if Status.Text == "Status: Working..." then return end
+-- AUTO JOIN TOGGLE (start / stop)
+local AutoJoinRunning = false
+local autoJoinTask = nil
 
-    LogBox.Text = ""
-
-    AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(255, 190, 70)
-    AutoJoinBtn.Text = "Working"
-    Status.Text = "Status: Working..."
-
-    -- READ INPUT AND MULTIPLY BY 1,000,000
-    local rawInput = tonumber(MinMSBox.Text) or 0
-    local minRequired = rawInput * 1000000
-
-    -- MOCK DATA
-    local foundServerValue = 5000000
-    local foundServerID = "79afcaad-2057-4e00-8a81-b741cef3f6ad"
-    local rarestItemName = "Mega-Brainrot Gem"
-    local rarestItemValue = 999999999999999999
-
-    addLog("Started Auto Join with minimum: " .. string.format("%,d", minRequired) .. " MS")
-    task.wait(1)
-    addLog("Querying servers...")
-    task.wait(1)
-
-    if foundServerValue >= minRequired then
-        addLog("[SUCCESS] High-value server found!")
-        addLog(" - Rarest Brainrot: " .. rarestItemName)
-        addLog(" - Value: $" .. string.format("%,d", rarestItemValue))
-        addLog(" - Server Value: " .. string.format("%,d", foundServerValue) .. " (Filter PASS)")
-        addLog(" - Teleport initiated (Aesthetic Only) to ID: " .. foundServerID)
-        task.wait(1.5)
-    else
-        addLog("[FILTER] Server rejected.")
-        addLog(" - Found Value: " .. string.format("%,d", foundServerValue) .. " MS")
-        addLog(" - Minimum Required: " .. string.format("%,d", minRequired) .. " MS")
-        task.wait(1)
+local function stopAutoJoin()
+    AutoJoinRunning = false
+    if autoJoinTask then
+        pcall(function() task.cancel(autoJoinTask) end)
+        autoJoinTask = nil
     end
-
     AutoJoinBtn.BackgroundColor3 = DefaultScanColor
     AutoJoinBtn.Text = "Auto Join"
+    Status.Text = "Status: Idle"
+    addLog("[AUTO JOIN] Stopped.")
+end
 
-    addLog("Auto Join Cycle Complete (UI Only)")
-    Status.Text = "Status: Finished"
+local function startAutoJoin()
+    if AutoJoinRunning then return end
+    AutoJoinRunning = true
+    AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(255,190,70)
+    AutoJoinBtn.Text = "Working"
+    Status.Text = "Status: Working..."
+    addLog("[AUTO JOIN] Started.")
+    autoJoinTask = task.spawn(function()
+        while AutoJoinRunning do
+            -- READ INPUT AND MULTIPLY BY 1,000,000 (MILLION)
+            local rawInput = tonumber(MinMSBox.Text) or 0
+            local minRequired = rawInput * 1000000
+
+            -- MOCK DATA (5 Million joins/sec)
+            local foundServerValue = 5000000
+            local foundServerID = "79afcaad-2057-4e00-8a81-b741cef3f6ad"
+            local rarestItemName = "Mega-Brainrot Gem"
+            local rarestItemValue = 999999999999999999
+
+            addLog("Started Auto Join with minimum: " .. string.format("%,d", minRequired) .. " MS")
+            task.wait(1)
+            if not AutoJoinRunning then break end
+            addLog("Querying servers...")
+            task.wait(1)
+            if not AutoJoinRunning then break end
+
+            if foundServerValue >= minRequired then
+                addLog("[SUCCESS] High-value server found!")
+                addLog("  - Rarest Brainrot: " .. rarestItemName)
+                addLog("  - Value: $" .. string.format("%,d", rarestItemValue))
+                addLog("  - Server Value: " .. string.format("%,d", foundServerValue) .. " (Filter PASS)")
+                addLog("  - Teleport initiated (Aesthetic Only) to ID: " .. foundServerID)
+                task.wait(1.5)
+                -- stop after success for this mock
+                stopAutoJoin()
+                break
+            else
+                addLog("[FILTER] Server rejected.")
+                addLog("  - Found Value: " .. string.format("%,d", foundServerValue) .. " MS")
+                addLog("  - Minimum Required: " .. string.format("%,d", minRequired) .. " MS")
+                task.wait(1)
+            end
+        end
+        if not AutoJoinRunning then
+            addLog("Auto Join Cycle Complete (UI Only)")
+        end
+    end)
+end
+
+AutoJoinBtn.MouseButton1Click:Connect(function()
+    if AutoJoinRunning then
+        stopAutoJoin()
+    else
+        startAutoJoin()
+    end
 end)
+
+-- DRAGGING the UI by the Header (smooth, no teleport)
+local dragging = false
+local dragStart = Vector2.new()
+local startPos = MainFrame.Position
+
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        RainbowBorder.Position = MainFrame.Position - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS)
+    end
+end)
+
+-- FIXED COLLAPSE LOGIC: collapse to header-only and reopen
+CollapseBtn.MouseButton1Click:Connect(function()
+    local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - HeaderHeight) / 2
+
+    if isExpanded then
+        -- COLLAPSE: hide everything except header children we want to keep
+        for _, v in ipairs(MainFrame:GetChildren()) do
+            -- keep header visible, but hide other UI elements (Left, Right, etc.)
+            if v ~= Header then
+                v.Visible = false
+            end
+        end
+
+        -- ensure header children (Title, DiscordBtn, CollapseBtn) remain visible
+        Header.Visible = true
+        Title.Parent = Header
+        DiscordBtn.Parent = Header
+        CollapseBtn.Parent = Header
+
+        MainFrame:TweenSize(MinHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+        MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+
+        RainbowBorder:TweenSize(MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+
+        isExpanded = false
+    else
+        -- EXPAND: show previously hidden children
+        for _, v in ipairs(MainFrame:GetChildren()) do
+            v.Visible = true
+        end
+        -- ensure children of Left and Right are visible (they were created earlier, so set their children visible)
+        for _, v in ipairs(Left:GetChildren()) do v.Visible = true end
+        for _, v in ipairs(Right:GetChildren()) do v.Visible = true end
+        LogScroll.Visible = true
+        Left.Visible = true
+        Right.Visible = true
+
+        MainFrame:TweenSize(MaxHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+        MainFrame:TweenPosition(FRAME_POS, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+
+        RainbowBorder:TweenSize(MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25)
+
+        isExpanded = true
+    end
+end)
+
+-- End of script
+
