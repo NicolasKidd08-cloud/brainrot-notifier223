@@ -1,5 +1,5 @@
 --[[
-    Nick and Scrap's Auto Jointer (Aesthetic UI)
+    Nick and Scrap's Auto Jointer (Aesthetic UI) - Visibility Fix
     Safe Roblox UI - No exploits included. All 'features' are aesthetic placeholders.
     Made for GitHub usage
 ]]
@@ -14,29 +14,36 @@ ScreenGui.Name = "AutoJointerUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- Main Window
+-- Main Window Dimensions
+local FRAME_SIZE = UDim2.new(0, 720, 0, 380)
+local FRAME_POS = UDim2.new(0.5, -360, 0.5, -190)
+
+-- Main Frame (The content window)
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 720, 0, 380)
-MainFrame.Position = UDim2.new(0.5, -360, 0.5, -190)
+MainFrame.Size = FRAME_SIZE
+MainFrame.Position = FRAME_POS
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 35)
 MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
+MainFrame.Parent = ScreenGui -- Parented directly to ScreenGui
 
 -- Round corners
 local UICorner = Instance.new("UICorner", MainFrame)
 UICorner.CornerRadius = UDim.new(0, 14)
 
--- RAINBOW BORDER (Gradients are complex, so we'll use a large, colored UICorner parent)
+
+-- RAINBOW BORDER (Outline)
+local BORDER_THICKNESS = 2
 local RainbowBorder = Instance.new("Frame")
-RainbowBorder.Size = UDim2.new(1, 4, 1, 4)
-RainbowBorder.Position = UDim2.new(0, -2, 0, -2)
+-- Size is MainFrame size + padding
+RainbowBorder.Size = FRAME_SIZE + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2) 
+-- Position is MainFrame position - padding
+RainbowBorder.Position = FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS)
 RainbowBorder.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Base color
 RainbowBorder.BorderSizePixel = 0
-RainbowBorder.ZIndex = MainFrame.ZIndex - 1 -- Put it behind the main frame
-RainbowBorder.Parent = MainFrame
+RainbowBorder.ZIndex = 0 -- Should be behind all other UI elements
+RainbowBorder.Parent = ScreenGui
 
-Instance.new("UICorner", RainbowBorder).CornerRadius = UDim.new(0, 16) -- Slightly larger radius
-MainFrame.Parent = RainbowBorder -- Reparent MainFrame to RainbowBorder
+Instance.new("UICorner", RainbowBorder).CornerRadius = UDim.new(0, 14 + BORDER_THICKNESS)
 
 -- Rainbow Effect Function (Runs constantly)
 local function updateRainbow()
@@ -100,14 +107,23 @@ Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1, 0)
 CollapseBtn.MouseButton1Click:Connect(function()
     if isExpanded then
         MainFrame:TweenSize(MinHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, 167.5), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3) -- Center adjustment for collapse
+        
+        -- Adjust Rainbow Border for collapsed state
+        RainbowBorder:TweenSize(MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, 167.5), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        
         isExpanded = false
     else
         MainFrame:TweenSize(MaxHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        MainFrame:TweenPosition(FRAME_POS, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+
+        -- Adjust Rainbow Border for expanded state
+        RainbowBorder:TweenSize(MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+        RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
+
         isExpanded = true
     end
-    -- Also update RainbowBorder size to match MainFrame
-    RainbowBorder.Size = MainFrame.Size + UDim2.new(0, 4, 0, 4) 
-    RainbowBorder.Position = UDim2.new(0, -2, 0, -2) 
 end)
 
 -- Left Panel
@@ -120,7 +136,7 @@ Left.Parent = MainFrame
 
 Instance.new("UICorner", Left).CornerRadius = UDim.new(0, 10)
 
--- Left Title (Now "Features")
+-- Left Title ("Features")
 local LeftTitle = Instance.new("TextLabel")
 LeftTitle.Text = "Features"
 LeftTitle.Font = Enum.Font.GothamBold
@@ -160,9 +176,13 @@ local function createInput(labelText, defaultText, yPos)
 end
 
 -- Feature 1: Minimum/sec (MS)
-local MinMSBox = createInput("Minimum/sec (MS)", "1000000000000000", 50) -- Example: A quadrillion for demonstration
+local MinMSBox = createInput("Minimum/sec (MS)", "1000000000000000", 50)
 
 -- Function to create feature buttons/toggles
+local function addLog(text)
+    -- Utility function placeholder (defined below)
+end
+
 local function createFeatureToggle(text, yPos)
     local Btn = Instance.new("TextButton")
     Btn.Text = text
@@ -195,6 +215,10 @@ local function createFeatureToggle(text, yPos)
     return Btn
 end
 
+-- Feature 3: Persistent Auto Join (Toggle style)
+local PersistentAutoJoinBtn = createFeatureToggle("Persistent Auto Join", 210)
+
+
 -- Feature 2: Auto Join (Button style)
 local AutoJoinBtn = Instance.new("TextButton")
 AutoJoinBtn.Text = "Auto Join"
@@ -209,10 +233,6 @@ AutoJoinBtn.BorderSizePixel = 0
 AutoJoinBtn.Parent = Left
 
 Instance.new("UICorner", AutoJoinBtn).CornerRadius = UDim.new(0, 8)
-
--- Feature 3: Persistent Auto Join (Toggle style)
-local PersistentAutoJoinBtn = createFeatureToggle("Persistent Auto Join", 210)
-
 
 -- Status Label (Moved down)
 local Status = Instance.new("TextLabel")
@@ -292,8 +312,8 @@ LogBox.TextYAlignment = Enum.TextYAlignment.Top
 LogBox.AutomaticSize = Enum.AutomaticSize.Y
 LogBox.Parent = LogScroll
 
--- Fake Auto Join Behavior
-local function addLog(text)
+-- Fake Auto Join Behavior (Utility function definition moved here)
+function addLog(text)
     -- Add text and scroll to bottom
     LogBox.Text = LogBox.Text .. "\n" .. text
     task.wait() -- Wait a frame for AutomaticSize to update
