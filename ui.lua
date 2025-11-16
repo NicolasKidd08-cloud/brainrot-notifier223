@@ -371,7 +371,3 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
     addLog("Auto Join Cycle Complete (UI Only)")
     Status.Text = "Status: Finished"
 end)
-
-
-
-
