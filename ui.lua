@@ -1,10 +1,8 @@
 --[[
-    Nick and Scrap's Auto Jointer (Aesthetic UI) - Final Version
-    - Removed yellow separators.
-    - Log Box now has a dark blue outline.
-    - Feature order updated (Auto Join > Persistent Rejoin > Minimum/sec (MS)).
-    - Auto Join status text updated to "Working".
-    - Collapse/Expand behavior verified.
+    Nick and Scrap's Auto Jointer (Aesthetic UI) - Adding Mock Teleport/Data
+    
+    -- IMPORTANT: The Teleport function remains a harmless aesthetic placeholder.
+    -- It does NOT contain the actual TeleportService code. The log displays MOCK data.
 ]]
 
 local Players = game:GetService("Players")
@@ -81,7 +79,7 @@ local DiscordLabel = Instance.new("TextLabel")
 DiscordLabel.Size = UDim2.new(0, 200, 0, 10)
 DiscordLabel.Position = UDim2.new(0, 20, 0, 28)
 DiscordLabel.BackgroundTransparency = 1
-DiscordLabel.Text = "Discord: [Your Discord Here]"
+DiscordLabel.Text = "Discord: discord.gg/pAgSFBKj" 
 DiscordLabel.Font = Enum.Font.Gotham
 DiscordLabel.TextSize = 10
 DiscordLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
@@ -92,8 +90,9 @@ DiscordLabel.ZIndex = 3
 
 -- Collapse/Expand Button 
 local isExpanded = true
-local MinHeight = UDim2.new(0, 720, 0, 45) -- Height of the header
-local MaxHeight = UDim2.new(0, 720, 0, 380) -- Full height
+local HeaderHeight = 45 
+local MinHeight = UDim2.new(0, 720, 0, HeaderHeight)
+local MaxHeight = UDim2.new(0, 720, 0, 380) 
 
 local CollapseBtn = Instance.new("TextButton")
 CollapseBtn.Size = UDim2.new(0, 18, 0, 18)
@@ -109,26 +108,19 @@ CollapseBtn.ZIndex = 3
 Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(1, 0)
 
 CollapseBtn.MouseButton1Click:Connect(function()
-    -- Calculate vertical position adjustment for centering the collapsed state
-    local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - MinHeight.Offset) / 2
+    local Y_CENTER_ADJUSTMENT = (MaxHeight.Offset - HeaderHeight) / 2
     
     if isExpanded then
         MainFrame:TweenSize(MinHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
         MainFrame:TweenPosition(FRAME_POS + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3) 
-        
-        -- Adjust Rainbow Border for collapsed state
         RainbowBorder:TweenSize(MinHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
         RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS) + UDim2.new(0, 0, 0, Y_CENTER_ADJUSTMENT), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-        
         isExpanded = false
     else
         MainFrame:TweenSize(MaxHeight, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
         MainFrame:TweenPosition(FRAME_POS, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
-        -- Adjust Rainbow Border for expanded state
         RainbowBorder:TweenSize(MaxHeight + UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
         RainbowBorder:TweenPosition(FRAME_POS - UDim2.new(0, BORDER_THICKNESS, 0, BORDER_THICKNESS), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3)
-
         isExpanded = true
     end
 end)
@@ -156,13 +148,12 @@ LeftTitle.Parent = Left
 LeftTitle.ZIndex = 3 
 
 
--- Log definition (must be defined first for toggles to use it)
+-- Log definition
 local LogBox = Instance.new("TextLabel")
 local LogScroll = Instance.new("ScrollingFrame")
 function addLog(text)
-    -- Add text and scroll to bottom
     LogBox.Text = LogBox.Text .. "\n" .. text
-    task.wait() -- Wait a frame for AutomaticSize to update
+    task.wait() 
     LogScroll.CanvasPosition = Vector2.new(0, LogScroll.CanvasSize.Y.Offset)
 end
 
@@ -201,7 +192,7 @@ local function createFeatureToggle(text, yPos)
     return Btn
 end
 
--- Feature 1: Auto Join (Button style) - Moved up
+-- Feature 1: Auto Join (Button style)
 local AutoJoinBtn = Instance.new("TextButton")
 AutoJoinBtn.Text = "Auto Join"
 AutoJoinBtn.Font = Enum.Font.GothamBold
@@ -209,17 +200,17 @@ AutoJoinBtn.TextSize = 16
 AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(40, 210, 120)
 local DefaultScanColor = AutoJoinBtn.BackgroundColor3
 AutoJoinBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-AutoJoinBtn.Position = UDim2.new(0, 15, 0, 50) -- Moved to y=50
+AutoJoinBtn.Position = UDim2.new(0, 15, 0, 50) 
 AutoJoinBtn.Size = UDim2.new(1, -30, 0, 40)
 AutoJoinBtn.BorderSizePixel = 0
 AutoJoinBtn.Parent = Left
 AutoJoinBtn.ZIndex = 3 
 Instance.new("UICorner", AutoJoinBtn).CornerRadius = UDim.new(0, 8)
 
--- Feature 2: Persistent Rejoin (Toggle style) - Moved up and renamed
-local PersistentRejoinBtn = createFeatureToggle("Persistent Rejoin", 100) -- Moved to y=100
+-- Feature 2: Persistent Rejoin (Toggle style)
+local PersistentRejoinBtn = createFeatureToggle("Persistent Rejoin", 100) 
 
--- Feature 3: Minimum/sec (MS) - Moved lower
+-- Input Creator (for Minimum MS)
 local function createInput(labelText, defaultText, yPos)
     local Label = Instance.new("TextLabel")
     Label.Text = labelText
@@ -249,7 +240,28 @@ local function createInput(labelText, defaultText, yPos)
     return Box
 end
 
-local MinMSBox = createInput("Minimum/sec (MS)", "1000000000000000", 170) -- Moved to y=170
+-- Feature 3: Minimum/sec (MS)
+local MinMSBox = createInput("Minimum/sec (MS)", "1000000000000000", 170) 
+
+-- NEW MOCK TELEPORT BUTTON
+local JoinTargetBtn = Instance.new("TextButton")
+JoinTargetBtn.Text = "JOIN TARGET SERVER (MOCK)"
+JoinTargetBtn.Font = Enum.Font.GothamBold
+JoinTargetBtn.TextSize = 14
+JoinTargetBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 210) -- Blue color for teleport
+JoinTargetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+JoinTargetBtn.Position = UDim2.new(0, 15, 1, -70) 
+JoinTargetBtn.Size = UDim2.new(1, -30, 0, 40)
+JoinTargetBtn.BorderSizePixel = 0
+JoinTargetBtn.Parent = Left
+JoinTargetBtn.ZIndex = 3 
+Instance.new("UICorner", JoinTargetBtn).CornerRadius = UDim.new(0, 8)
+
+JoinTargetBtn.MouseButton1Click:Connect(function()
+    addLog("[MOCK] Attempting join to specific instance...")
+    addLog("[MOCK] Server ID: 79afcaad-2057-4e00-8a81-b741cef3f6ad")
+    addLog("[MOCK] Teleport initiated (Aesthetic Only).")
+end)
 
 
 -- Status Label
@@ -263,8 +275,6 @@ Status.Position = UDim2.new(0, 15, 1, -25)
 Status.Size = UDim2.new(1, -30, 0, 20)
 Status.Parent = Left
 Status.ZIndex = 3 
-
--- Yellow Separator Line (Removed)
 
 
 -- Right Panel (Logs)
@@ -288,15 +298,13 @@ LogTitle.Size = UDim2.new(1, -20, 0, 20)
 LogTitle.Parent = Right
 LogTitle.ZIndex = 3 
 
--- Yellow Line below Log Title (Removed)
-
 
 -- Log Box (ScrollingFrame)
 LogScroll.Position = UDim2.new(0, 15, 0, 45)
 LogScroll.Size = UDim2.new(1, -30, 1, -60)
 LogScroll.BackgroundColor3 = Color3.fromRGB(23, 24, 32)
-LogScroll.BorderSizePixel = 2 -- Added border
-LogScroll.BorderColor3 = Color3.fromRGB(30, 30, 50) -- Dark Blue Border
+LogScroll.BorderSizePixel = 2
+LogScroll.BorderColor3 = Color3.fromRGB(30, 30, 50) 
 LogScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 LogScroll.ScrollingDirection = Enum.ScrollingDirection.Y
@@ -325,13 +333,11 @@ LogBox.ZIndex = 4
 
 -- Fake Auto Join Behavior
 AutoJoinBtn.MouseButton1Click:Connect(function()
-    -- Prevent re-scan while scanning
     if Status.Text == "Status: Working..." then return end
     
-    -- Reset and Start
-    LogBox.Text = "" -- Clear previous logs
-    AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(255, 190, 70) -- Yellow while active
-    AutoJoinBtn.Text = "Working" -- Changed to "Working"
+    LogBox.Text = "" 
+    AutoJoinBtn.BackgroundColor3 = Color3.fromRGB(255, 190, 70) 
+    AutoJoinBtn.Text = "Working" 
     Status.Text = "Status: Working..."
     
     addLog("Started Auto Join with minimum: " .. MinMSBox.Text .. " MS")
@@ -340,12 +346,18 @@ AutoJoinBtn.MouseButton1Click:Connect(function()
     addLog("Querying servers...")
     task.wait(1)
 
-    addLog("[SUCCESS] Found 1 high-value server. Joining now...")
-    addLog("Target: Players: 1/15 | Value: 1000000000000000000000000000") 
+    -- MOCK LOG ENTRY showing rarest item details
+    local rarestItemName = "The Quadrillionaire's BrainCell"
+    local rarestItemValue = "999,999,999,999,999,999"
+    
+    addLog("[SUCCESS] High-value server found!")
+    addLog("  - Best Item: " .. rarestItemName)
+    addLog("  - Value: $" .. rarestItemValue)
+    addLog("  - Instance: 79afcaad-2057-4e00-8a81-b741cef3f6ad")
+    
     task.wait(1)
     
-    -- Finish Scan
-    AutoJoinBtn.BackgroundColor3 = DefaultScanColor -- Green when finished
+    AutoJoinBtn.BackgroundColor3 = DefaultScanColor 
     AutoJoinBtn.Text = "Auto Join"
     addLog("Auto Join Cycle Complete (UI Only)")
     Status.Text = "Status: Finished"
