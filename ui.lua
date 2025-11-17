@@ -1,19 +1,27 @@
--- Nick & Scrap’s Auto Jointer – Compact Final (650 x 400) + Toggles + Logs + Drag + Open/Close
--- UI-Only, SAFE.
+-- Nick & Scrap’s Auto Jointer – Compact Final (650 x 400)
+-- UI-only, safe. Now includes: toggles, logs, drag, open/close with proper hide.
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
+-- clean previous
 local existing = PlayerGui:FindFirstChild("NickScrapAutoJoiner")
 if existing then existing:Destroy() end
 
--- UI SIZE
+-- UI size (compact)
 local UI_W, UI_H = 650, 400
 local FULL_SIZE = UDim2.new(0, UI_W, 0, UI_H)
 local HEADER_H = 50
 local CLOSED_SIZE = UDim2.new(0, UI_W, 0, HEADER_H)
+
+local LEFT_MARGIN = 14
+local LEFT_W = 250
+local GAP = 14
+local RIGHT_X = LEFT_MARGIN + LEFT_W + GAP
+local RIGHT_W = UI_W - RIGHT_X - LEFT_MARGIN
 
 -- ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
@@ -21,31 +29,30 @@ ScreenGui.Name = "NickScrapAutoJoiner"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- Main Frame
+-- Main frame
 local Main = Instance.new("Frame")
 Main.Size = FULL_SIZE
 Main.Position = UDim2.new(0.5, -UI_W/2, 0.12, 0)
 Main.BackgroundColor3 = Color3.fromRGB(28,29,33)
 Main.BorderSizePixel = 0
-Main.Parent = ScreenGui
 Main.Name = "MainFrame"
-
+Main.Parent = ScreenGui
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0,10)
 
 local stroke = Instance.new("UIStroke", Main)
 stroke.Thickness = 3
 
--- RAINBOW BORDER
+-- rainbow border
 coroutine.wrap(function()
-	while true do
-		for i = 0, 255 do
-			stroke.Color = Color3.fromHSV(i/255, 0.88, 1)
-			task.wait(0.02)
-		end
-	end
+    while true do
+        for i = 0, 255 do
+            stroke.Color = Color3.fromHSV(i/255, 0.88, 1)
+            task.wait(0.02)
+        end
+    end
 end)()
 
--- HEADER
+-- Header
 local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1,0,0,HEADER_H)
 Header.BackgroundColor3 = Color3.fromRGB(20,20,22)
@@ -63,7 +70,7 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Text = "Nick and Scrap's Auto Jointer"
 Title.Parent = Header
 
--- DISCORD BUTTON
+-- Discord button
 local Discord = Instance.new("TextButton")
 Discord.Size = UDim2.new(0,200,1,0)
 Discord.Position = UDim2.new(1, -230, 0, 0)
@@ -75,14 +82,14 @@ Discord.Text = "discord.gg/pAgSFBKj"
 Discord.Parent = Header
 
 Discord.MouseButton1Click:Connect(function()
-	if setclipboard then setclipboard("https://discord.gg/pAgSFBKj") end
-	local old = Discord.Text
-	Discord.Text = "Copied!"
-	task.wait(1)
-	if Discord then Discord.Text = old end
+    if setclipboard then setclipboard("https://discord.gg/pAgSFBKj") end
+    local old = Discord.Text
+    Discord.Text = "Copied!"
+    task.wait(1)
+    if Discord then Discord.Text = old end
 end)
 
--- RED TOGGLE BUTTON (OPEN/CLOSE UI)
+-- Red toggle button (open/close UI)
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Size = UDim2.new(0,34,0,34)
 ToggleBtn.Position = UDim2.new(1, -40, 0.5, -17)
@@ -91,20 +98,19 @@ ToggleBtn.Text = ""
 ToggleBtn.Parent = Header
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1,0)
 
--- CONTENT AREA
+-- Content (will be hidden on close!)
 local Content = Instance.new("Frame")
 Content.Size = UDim2.new(1,0,1,-HEADER_H)
 Content.Position = UDim2.new(0,0,0,HEADER_H)
 Content.BackgroundTransparency = 1
-Content.Name = "Content"
 Content.Parent = Main
 
 -----------------------------------------------------
 -- LEFT PANEL
 -----------------------------------------------------
 local Left = Instance.new("Frame")
-Left.Size = UDim2.new(0, 250, 1, 0)
-Left.Position = UDim2.new(0,14,0,0)
+Left.Size = UDim2.new(0, LEFT_W, 1, 0)
+Left.Position = UDim2.new(0, LEFT_MARGIN, 0, 0)
 Left.BackgroundColor3 = Color3.fromRGB(22,23,27)
 Left.Parent = Content
 Instance.new("UICorner", Left).CornerRadius = UDim.new(0,10)
@@ -120,7 +126,7 @@ leftLayout.Padding = UDim.new(0,10)
 leftLayout.SortOrder = Enum.SortOrder.LayoutOrder
 leftLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- FEATURE HEADER
+-- Feature header
 local featHeader = Instance.new("Frame")
 featHeader.Size = UDim2.new(1,0,0,44)
 featHeader.BackgroundColor3 = Color3.fromRGB(36,36,40)
@@ -137,7 +143,7 @@ featLabel.TextColor3 = Color3.fromRGB(245,245,245)
 featLabel.Parent = featHeader
 
 -----------------------------------------------------
--- AUTO JOIN + PERSISTENT BUTTONS (Toggle Logic)
+-- Buttons
 -----------------------------------------------------
 local btnArea = Instance.new("Frame")
 btnArea.Size = UDim2.new(1,0,0,120)
@@ -167,7 +173,7 @@ PersBtn.Parent = btnArea
 Instance.new("UICorner", PersBtn).CornerRadius = UDim.new(0,8)
 
 -----------------------------------------------------
--- MS INPUT
+-- MS Input
 -----------------------------------------------------
 local minFrame = Instance.new("Frame")
 minFrame.Size = UDim2.new(1,0,0,74)
@@ -208,11 +214,11 @@ Status.Text = "Status: Idle"
 Status.Parent = Left
 
 -----------------------------------------------------
--- RIGHT LOG PANEL
+-- Right log panel
 -----------------------------------------------------
 local Right = Instance.new("Frame")
-Right.Size = UDim2.new(0, 650-14-250-14, 1, 0)
-Right.Position = UDim2.new(0, 14+250+14, 0, 0)
+Right.Size = UDim2.new(0, RIGHT_W, 1, 0)
+Right.Position = UDim2.new(0, RIGHT_X, 0, 0)
 Right.BackgroundColor3 = Color3.fromRGB(30,30,34)
 Right.Parent = Content
 Instance.new("UICorner", Right).CornerRadius = UDim.new(0,8)
@@ -244,7 +250,7 @@ local logLayout = Instance.new("UIListLayout", Scroll)
 logLayout.Padding = UDim.new(0,6)
 logLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- FUNCTION: Add Log Row
+-- LOG FUNCTION
 local function AddLog(text)
 	local L = Instance.new("TextLabel")
 	L.Size = UDim2.new(1,0,0,22)
@@ -261,13 +267,13 @@ local function AddLog(text)
 end
 
 -----------------------------------------------------
--- TOGGLE STATES
+-- Toggle states
 -----------------------------------------------------
 local AutoEnabled = false
 local PersEnabled = false
 
 -----------------------------------------------------
--- AUTO JOIN BUTTON
+-- Auto-Join Button
 -----------------------------------------------------
 AutoBtn.MouseButton1Click:Connect(function()
 	AutoEnabled = not AutoEnabled
@@ -284,7 +290,7 @@ AutoBtn.MouseButton1Click:Connect(function()
 end)
 
 -----------------------------------------------------
--- PERSISTENT REJOIN BUTTON
+-- Persistent Rejoin Button
 -----------------------------------------------------
 PersBtn.MouseButton1Click:Connect(function()
 	PersEnabled = not PersEnabled
@@ -299,7 +305,7 @@ PersBtn.MouseButton1Click:Connect(function()
 end)
 
 -----------------------------------------------------
--- OPEN/CLOSE UI BUTTON
+-- OPEN/CLOSE UI (Fully Fixed)
 -----------------------------------------------------
 local Open = true
 
@@ -307,21 +313,38 @@ ToggleBtn.MouseButton1Click:Connect(function()
 	Open = not Open
 	
 	if Open then
-		-- OPEN ANIMATE
-		TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = FULL_SIZE}):Play()
+		-- Show content immediately
+		Content.Visible = true
+		
+		-- Expand animation
+		TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			Size = FULL_SIZE
+		}):Play()
+		
 		AddLog("UI Opened")
 	else
-		-- CLOSE (show header only)
-		TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = CLOSED_SIZE}):Play()
+		-- Shrink animation
+		TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			Size = CLOSED_SIZE
+		}):Play()
+		
 		AddLog("UI Closed")
+		
+		-- Hide content AFTER animation finishes
+		task.delay(0.23, function()
+			if not Open then
+				Content.Visible = false
+			end
+		end)
 	end
 end)
 
 -----------------------------------------------------
--- DRAGGABLE UI (HEADER)
+-- DRAGGING (Header)
 -----------------------------------------------------
 local dragging = false
-local dragStart, startPos
+local dragStart
+local startPos
 
 Header.InputBegan:Connect(function(i)
 	if i.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -332,14 +355,16 @@ Header.InputBegan:Connect(function(i)
 end)
 
 Header.InputChanged:Connect(function(i)
-	if i.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+	if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
 		local delta = i.Position - dragStart
-		Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-			startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		Main.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
 	end
 end)
 
-game:GetService("UserInputService").InputEnded:Connect(function(i)
+UIS.InputEnded:Connect(function(i)
 	if i.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = false
 	end
