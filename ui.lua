@@ -20,7 +20,7 @@ local RIGHT_X = LEFT_MARGIN + LEFT_W + GAP
 local RIGHT_W = UI_W - RIGHT_X - LEFT_MARGIN
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NickScrapAutoJoiner"
+ScreenGui.Name = "Nexa Aj"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
