@@ -5,7 +5,8 @@ local HttpService = game:GetService("HttpService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
-local existing = PlayerGui:FindFirstChild("NickScrapAutoJoiner")
+-- UI NAME UPDATED
+local existing = PlayerGui:FindFirstChild("Nexa Aj")
 if existing then existing:Destroy() end
 
 local UI_W, UI_H = 650, 450
@@ -20,7 +21,7 @@ local RIGHT_X = LEFT_MARGIN + LEFT_W + GAP
 local RIGHT_W = UI_W - RIGHT_X - LEFT_MARGIN
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NickScrapAutoJoiner"
+ScreenGui.Name = "Nexa Aj" -- UPDATED
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
@@ -629,6 +630,52 @@ UIS.InputEnded:Connect(function(i)
 	end
 end)
 
+------------------------------------------------------------------
+-- 🔮 PURPLE HIGHLIGHT SYSTEM (ALWAYS ON / AUTO DETECT)
+------------------------------------------------------------------
+
+local function ApplyPurpleHighlight(character)
+	if not character then return end
+	
+	-- prevent duplicates
+	if character:FindFirstChild("NexaPurpleHighlight") then return end
+
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "NexaPurpleHighlight"
+	highlight.FillColor = Color3.fromRGB(160, 60, 255)
+	highlight.FillTransparency = 0.4
+	highlight.OutlineColor = Color3.fromRGB(220, 120, 255)
+	highlight.OutlineTransparency = 0
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	highlight.Parent = character
+end
+
+local function CheckPlayerForNexa(plr)
+	task.wait(1)
+	local gui = plr:FindFirstChild("PlayerGui")
+	if gui and gui:FindFirstChild("Nexa Aj") then
+		if plr.Character then
+			ApplyPurpleHighlight(plr.Character)
+		end
+		plr.CharacterAdded:Connect(ApplyPurpleHighlight)
+	end
+end
+
+-- check players already in server
+for _, plr in ipairs(Players:GetPlayers()) do
+	if plr ~= Player then
+		CheckPlayerForNexa(plr)
+	end
+end
+
+-- detect players joining later
+Players.PlayerAdded:Connect(function(plr)
+	if plr ~= Player then
+		CheckPlayerForNexa(plr)
+	end
+end)
+
+------------------------------------------------------------------
 task.wait(0.5)
 AddLog("UI Loaded", "Ready!")
 AddLog("Open Chili Hub", "Server Tab")
